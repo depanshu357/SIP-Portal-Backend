@@ -1,12 +1,12 @@
 package controllers
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"sip/database"
 	"sip/models"
 	"sip/services"
+	"sip/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -15,86 +15,99 @@ import (
 )
 
 func Signup(c *gin.Context) {
-	var body struct {
-		Email      string
-		Password   string
-		IsVerified bool
-		Role       string
+	var req struct {
+		Email      string `json:"email" binding:"required,email"`
+		Password   string `json:"password" binding:"required,min=6"`
+		IsVerified bool   `json:"is_verified"`
+		Role       string `json:"role" binding:"required"`
 	}
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read body"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Logger.Sugar().Errorf("Signup validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
-	var checkUser models.User
-	database.DB.Find(&checkUser, "email = ?", body.Email)
-	if checkUser.ID != 0 {
+	var existingUser models.User
+	if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
+		utils.Logger.Sugar().Warnf("Signup failed: user %s already exists", req.Email)
 		c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
 		return
 	}
-	hash, err := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost)
 
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		utils.Logger.Sugar().Errorf("Password hashing failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
-	user := models.User{Email: body.Email, Password: string(hash), IsVerified: body.IsVerified, Role: body.Role}
-	result := database.DB.Create(&user)
-
-	if result.Error != nil {
+	user := models.User{
+		Email:      req.Email,
+		Password:   string(hashedPassword),
+		IsVerified: req.IsVerified,
+		Role:       req.Role,
+	}
+	if err := database.DB.Create(&user).Error; err != nil {
+		utils.Logger.Sugar().Errorf("Failed to create user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
 	}
 
-	// otp := "324353"
-	// sendMail(user.Email, otp)
-
+	utils.Logger.Sugar().Infof("User created: %s", user.Email)
 	c.JSON(http.StatusOK, gin.H{"message": "User created successfully"})
 }
 
 func Login(c *gin.Context) {
-	var body struct {
+	var req struct {
 		Email    string
 		Password string
 	}
-	if c.Bind(&body) != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read body"})
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Logger.Sugar().Errorf("Login validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 	var user models.User
-	database.DB.First(&user, "email = ?", body.Email)
-
-	if user.ID == 0 {
+	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		utils.Logger.Sugar().Warnf("User not found: %s", req.Email)
 		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
 		return
 	}
 
-	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(body.Password))
-
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		utils.Logger.Sugar().Warnf("Invalid login attempt for user: %s", req.Email)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
 		return
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.ID,
-		"exp": time.Now().Add(time.Hour * 24 * 30).Unix(),
-	})
-
-	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	token, err := generateJWT(user.ID, user.Role)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate token"})
+		utils.Logger.Sugar().Errorf("Failed to generate JWT: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
 		return
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", tokenString, 3600*24, "", "", false, true)
+	c.SetCookie("Authorization", token, 3600*24, "", "", false, true)
 
-	c.JSON(http.StatusOK, gin.H{})
+	utils.Logger.Sugar().Infof("User logged in: %s", user.Email)
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+}
+
+func generateJWT(userID uint, userRole string) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub":  userID,
+		"role": userRole,
+		"exp":  time.Now().Add(30 * 24 * time.Hour).Unix(),
+	})
+
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 }
 
 func Validate(c *gin.Context) {
 	user, _ := c.Get("user")
+
+	// has a middleware that sets the user in the context
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": user,
 	})
@@ -127,7 +140,7 @@ func GenerateAndSendOTP(c *gin.Context) {
 	otp_size := 6
 	otp, err := services.GenerateOTP(otp_size)
 	if err != nil {
-		log.Fatalf("Failed to generate OTP: %v", err)
+		utils.Logger.Sugar().Errorf("Failed to generate OTP: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate OTP"})
 		return
 	}
@@ -135,7 +148,7 @@ func GenerateAndSendOTP(c *gin.Context) {
 	// Send OTP via email
 	err = services.SendMail(body.Email, otp)
 	if err != nil {
-		log.Fatalf("Failed to send OTP: %v", err)
+		utils.Logger.Sugar().Errorf("Failed to send OTP: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to send OTP"})
 		return
 	}
@@ -149,7 +162,7 @@ func GenerateAndSendOTP(c *gin.Context) {
 
 	// Insert the OTP record into the database
 	if err := database.DB.Create(&otpModel).Error; err != nil {
-		log.Fatalf("Failed to create OTP record: %v", err)
+		utils.Logger.Sugar().Errorf("Failed to create OTP record: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to store OTP"})
 		return
 	}

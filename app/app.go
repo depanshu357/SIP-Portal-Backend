@@ -1,15 +1,17 @@
 package app
 
 import (
-	"log"
 	"sip/database"
 	"sip/database/migration"
 	"sip/routes"
+	"sip/utils"
 
 	"github.com/lpernett/godotenv"
 )
 
 func Run() {
+	utils.InitializeLogger()
+	utils.Logger.Info("Starting the application")
 	loadEnv()
 	initDb()
 	router := routes.InitRoutes()
@@ -22,7 +24,7 @@ func Run() {
 func loadEnv() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+		utils.Logger.Fatal("Error loading .env file")
 	}
 }
 
