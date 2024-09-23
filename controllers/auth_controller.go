@@ -79,8 +79,25 @@ func Signup(c *gin.Context) {
 		}
 	}
 
-	utils.Logger.Sugar().Infof("User created: %s", user.Email)
-	c.JSON(http.StatusOK, gin.H{"message": "User created successfully"})
+	var createdUser models.User
+	database.DB.Where("email = ?", req.Email).First(&createdUser)
+	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		utils.Logger.Sugar().Warnf("User not found: %s", req.Email)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	token, err := generateJWT(user.ID, user.Role)
+	if err != nil {
+		utils.Logger.Sugar().Errorf("Failed to generate JWT: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("Authorization", token, 3600*24, "", "", false, true)
+
+	utils.Logger.Sugar().Infof("User created and logged in: %s", user.Email)
+	c.JSON(http.StatusOK, gin.H{"message": "User created successfully", "userInfo": createdUser})
 }
 
 func Login(c *gin.Context) {
@@ -196,6 +213,39 @@ func GenerateAndSendOTP(c *gin.Context) {
 
 	// Return success message
 	c.JSON(http.StatusOK, gin.H{"message": "OTP sent successfully"})
+}
+
+func ChangePassword(c *gin.Context) {
+	var req struct {
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=6"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.Logger.Sugar().Errorf("Change password validation failed: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	//update password
+	var user models.User
+	if err := database.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		utils.Logger.Sugar().Warnf("User not found: %s", req.Email)
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		utils.Logger.Sugar().Errorf("Password hashing failed: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		return
+	}
+	user.Password = string(hashedPassword)
+	if err := database.DB.Save(&user).Error; err != nil {
+		utils.Logger.Sugar().Errorf("Failed to update password: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
+
 }
 
 func VerifyOTP(c *gin.Context) {

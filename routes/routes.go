@@ -26,7 +26,7 @@ func InitRoutes() *gin.Engine {
 
 	// set routes for remaining paths
 	router.NoRoute(func(c *gin.Context) {
-		c.JSON(404, gin.H{"error": "this route does not exist"})
+		c.JSON(404, gin.H{"error": "This route does not exist"})
 	})
 	return router
 }
