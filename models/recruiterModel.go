@@ -6,10 +6,9 @@ import (
 
 type Recruiter struct {
 	gorm.Model
-	FirstName  string `gorm:"not null"`
+	FirstName  string
 	LastName   string
 	Email      string `gorm:"unique;not null"`
-	Password   string `gorm:"not null"`
 	Company    string
 	IsVerified bool `gorm:"default:false"`
 }

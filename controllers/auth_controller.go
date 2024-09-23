@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"net/http"
 	"os"
 	"sip/database"
@@ -12,14 +13,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 func Signup(c *gin.Context) {
 	var req struct {
-		Email      string `json:"email" binding:"required,email"`
-		Password   string `json:"password" binding:"required,min=6"`
-		IsVerified bool   `json:"is_verified"`
-		Role       string `json:"role" binding:"required"`
+		Email       string `json:"email" binding:"required,email"`
+		Password    string `json:"password" binding:"required,min=6"`
+		Role        string `json:"role" binding:"required"`
+		RollNo      string `json:"roll_no"`
+		CompanyName string `json:"company_name"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.Logger.Sugar().Errorf("Signup validation failed: %v", err)
@@ -41,15 +44,39 @@ func Signup(c *gin.Context) {
 	}
 
 	user := models.User{
-		Email:      req.Email,
-		Password:   string(hashedPassword),
-		IsVerified: req.IsVerified,
-		Role:       req.Role,
+		Email:    req.Email,
+		Password: string(hashedPassword),
+		Role:     req.Role,
 	}
+
 	if err := database.DB.Create(&user).Error; err != nil {
 		utils.Logger.Sugar().Errorf("Failed to create user: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
 		return
+	}
+
+	if req.Role == "student" {
+		student := models.Student{
+			Email:      req.Email,
+			RollNo:     req.RollNo,
+			IsVerified: false,
+		}
+		if err := database.DB.Create(&student).Error; err != nil {
+			utils.Logger.Sugar().Errorf("Failed to create student: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
+			return
+		}
+	} else if req.Role == "company" {
+		company := models.Recruiter{
+			Email:      req.Email,
+			Company:    req.CompanyName,
+			IsVerified: false,
+		}
+		if err := database.DB.Create(&company).Error; err != nil {
+			utils.Logger.Sugar().Errorf("Failed to create company: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create company"})
+			return
+		}
 	}
 
 	utils.Logger.Sugar().Infof("User created: %s", user.Email)
@@ -180,19 +207,29 @@ func VerifyOTP(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to read body"})
 		return
 	}
-	// check if the otp mathces
+
+	// check if the otp matches
 	var user_otp models.Otp
 	record := database.DB.First(&user_otp, "email = ?", body.Email)
-	// if otp does not match, return an error
+
+	// Handle the case when no record is found
 	if record.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP does not match"})
+		if errors.Is(record.Error, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Record not found"})
+			return
+		}
+		// Handle any other database error
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to query database"})
 		return
 	}
+
+	// If OTP does not match, return an error
 	if user_otp.Otp != body.Otp {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "OTP does not match"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "OTP does not match"})
 		return
 	}
-	// if otp matches, delete the otp record from the database
+
+	// If OTP matches, delete the OTP record from the database
 	database.DB.Delete(&models.Otp{}, "email = ?", body.Email)
 
 	c.JSON(http.StatusOK, gin.H{"message": "OTP verified successfully"})
