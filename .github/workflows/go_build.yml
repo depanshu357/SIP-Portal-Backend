@@ -1,21 +1,20 @@
-    name: Build Go Project
+name: Build Go Project
 
-    on: [push, pull_request]
+on: [push, pull_request]
 
-    jobs:
-
-      build:
-
-        runs-on: ubuntu-latest  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.23.0"]
 
         steps:
+          - uses: actions/checkout@v3
 
-        - uses: actions/checkout@v3  
+          - uses: actions/setup-go@v3
 
-        - uses: actions/setup-go@v3
+            with:
+              go-version: 1.18
 
-          with:
-
-            go-version: 1.18  
-
-        - run: go build -v  
+          - run: go build -v
