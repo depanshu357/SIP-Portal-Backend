@@ -66,7 +66,7 @@ func Signup(c *gin.Context) {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create student"})
 			return
 		}
-	} else if req.Role == "company" {
+	} else if req.Role == "recruiter" {
 		company := models.Recruiter{
 			Email:      req.Email,
 			Company:    req.CompanyName,
@@ -75,6 +75,16 @@ func Signup(c *gin.Context) {
 		if err := database.DB.Create(&company).Error; err != nil {
 			utils.Logger.Sugar().Errorf("Failed to create company: %v", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create company"})
+			return
+		}
+	} else if req.Role == "admin" {
+		admin := models.Admin{
+			Email:      req.Email,
+			IsVerified: false,
+		}
+		if err := database.DB.Create(&admin).Error; err != nil {
+			utils.Logger.Sugar().Errorf("Failed to create admin: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create admin"})
 			return
 		}
 	}
@@ -102,8 +112,8 @@ func Signup(c *gin.Context) {
 
 func Login(c *gin.Context) {
 	var req struct {
-		Email    string
-		Password string
+		Email    string `json:"email" binding:"required,email"`
+		Password string `json:"password" binding:"required,min=6"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.Logger.Sugar().Errorf("Login validation failed: %v", err)
@@ -134,7 +144,8 @@ func Login(c *gin.Context) {
 	c.SetCookie("Authorization", token, 3600*24, "", "", false, true)
 
 	utils.Logger.Sugar().Infof("User logged in: %s", user.Email)
-	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})
+	// println(token)
+	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "user": user, "token": token})
 }
 
 func generateJWT(userID uint, userRole string) (string, error) {
