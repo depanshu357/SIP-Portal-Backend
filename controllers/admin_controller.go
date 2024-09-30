@@ -10,8 +10,8 @@ import (
 )
 
 type UserWithoutPassword struct {
-	ID         uint   `json:"id"`
-	Email      string `json:"email"`
+	ID         uint
+	Email      string
 	CreatedAt  time.Time
 	IsVerified bool
 	Role       string
@@ -58,19 +58,19 @@ func GetAdminList(c *gin.Context) {
 }
 
 func GetStudentList(c *gin.Context) {
-	var users []models.Student
-	if err := database.DB.Where("role = ?", "student").Find(&users).Error; err != nil {
+	var students []models.Student
+	if err := database.DB.Find(&students).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	c.JSON(http.StatusOK, gin.H{"users": students})
 }
 
 func GetRecruiterList(c *gin.Context) {
-	var users []models.Recruiter
-	if err := database.DB.Where("role = ?", "recruiter").Find(&users).Error; err != nil {
+	var reruiters []models.Recruiter
+	if err := database.DB.Find(&reruiters).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"users": users})
+	c.JSON(http.StatusOK, gin.H{"users": reruiters})
 }
