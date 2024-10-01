@@ -1,1 +1,15 @@
 CompileDaemon --build="go build -o server.exe ." --command="D:\Testing\Go-tutorial\sip-portal-go-backend-1\server.exe"
+
+
+
+It is:
+
+find / -type d -name 'httpdocs'
+
+the first parameter "/" is where to look, in this case "/" it's the entire system.
+
+-name could be -iname to ignore case
+
+also -type is not mandatory
+
+use : man find for more options
