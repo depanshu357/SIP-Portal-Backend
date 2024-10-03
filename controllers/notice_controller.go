@@ -35,7 +35,7 @@ func CreateNotice(c *gin.Context) {
 
 func GetAllNotice(c *gin.Context) {
 	var notices []models.Notice
-	if err := database.DB.Find(&notices).Error; err != nil {
+	if err := database.DB.Order("created_at desc").Find(&notices).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
@@ -43,15 +43,13 @@ func GetAllNotice(c *gin.Context) {
 }
 
 func GetRecruiterNotice(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email query parameter is required"})
 		return
 	}
 	var notices []models.Notice
-	if err := database.DB.Where("? = ANY(recipients)", req.Email).Or("? = ANY(recipients)", "recruiter").Find(&notices).Error; err != nil {
+	if err := database.DB.Where("? = ANY(recipients)", email).Or("? = ANY(recipients)", "recruiter").Order("created_at desc").Find(&notices).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
@@ -59,15 +57,17 @@ func GetRecruiterNotice(c *gin.Context) {
 }
 
 func GetStudentNotice(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+	email := c.Query("email")
+	if email == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email query parameter is required"})
 		return
 	}
+	// if err := c.ShouldBindJSON(&req); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
+	// 	return
+	// }
 	var notices []models.Notice
-	if err := database.DB.Where("? = ANY(recipients)", req.Email).Or("? = ANY(recipients)", "student").Find(&notices).Error; err != nil {
+	if err := database.DB.Where("? = ANY(recipients)", email).Or("? = ANY(recipients)", "student").Order("created_at desc").Find(&notices).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
