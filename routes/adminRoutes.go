@@ -14,5 +14,6 @@ func setAdminRoutes(router *gin.Engine) {
 		admin.GET("/recruiter-list", controllers.GetRecruiterList)
 		admin.POST("/create-notice", controllers.CreateNotice)
 		admin.GET("/notices", controllers.GetAllNotice)
+		admin.POST("/create-event", controllers.CreateEvent)
 	}
 }

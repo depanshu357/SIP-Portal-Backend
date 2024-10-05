@@ -31,6 +31,10 @@ func Up() {
 	if !database.DB.Migrator().HasTable(&models.Notice{}) {
 		database.DB.Migrator().CreateTable(&models.Notice{})
 	}
+
+	if !database.DB.Migrator().HasTable(&models.Event{}) {
+		database.DB.Migrator().CreateTable(&models.Event{})
+	}
 }
 
 func Down() {
@@ -40,4 +44,5 @@ func Down() {
 	database.DB.Migrator().DropTable((&models.Admin{}))
 	database.DB.Migrator().DropTable((&models.Otp{}))
 	database.DB.Migrator().DropTable((&models.Notice{}))
+	database.DB.Migrator().DropTable((&models.Event{}))
 }
