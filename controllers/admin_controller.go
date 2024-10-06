@@ -95,3 +95,12 @@ func CreateEvent(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Event created successfully"})
 }
+
+func GetAllEvents(c *gin.Context) {
+	var events []models.Event
+	if err := database.DB.Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching events"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"events": events})
+}
