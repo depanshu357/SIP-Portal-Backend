@@ -1,7 +1,14 @@
 package main
 
-import "sip/app"
+import (
+	"sip/app"
+	"sync"
+)
+
+var wg sync.WaitGroup
 
 func main() {
-	app.Run()
+	wg.Add(1)
+	go app.Run(&wg)
+	wg.Wait()
 }

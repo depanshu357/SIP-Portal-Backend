@@ -141,7 +141,8 @@ func Login(c *gin.Context) {
 	}
 
 	c.SetSameSite(http.SameSiteLaxMode)
-	c.SetCookie("Authorization", token, 3600*24, "", "", false, true)
+	c.SetSameSite(http.SameSiteNoneMode)
+	c.SetCookie("Authorization", token, 3600*24, "/", "localhost:3000", true, true)
 
 	utils.Logger.Sugar().Infof("User logged in: %s", user.Email)
 	// println(token)
@@ -294,4 +295,13 @@ func VerifyOTP(c *gin.Context) {
 	database.DB.Delete(&models.Otp{}, "email = ?", body.Email)
 
 	c.JSON(http.StatusOK, gin.H{"message": "OTP verified successfully"})
+}
+
+func GetAllEvents(c *gin.Context) {
+	var events []models.Event
+	if err := database.DB.Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching events"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"events": events})
 }

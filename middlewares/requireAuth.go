@@ -13,17 +13,27 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type CustomClaims struct {
+	// ID         int    `json:"id"`
+	// Email      string `json:"email"`
+	// IsVerified bool   `json:"isVerified"`
+	// Role       string `json:"role"`
+	jwt.RegisteredClaims
+	jwt.Token
+}
+
 func RequireAuth(c *gin.Context) {
 	tokenString, err := c.Cookie("Authorization")
+	utils.Logger.Sugar().Info(c.Request.Header)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
+	utils.Logger.Sugar().Info(tokenString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return []byte(os.Getenv("JWT_SECRET")), nil
 	})
@@ -34,7 +44,6 @@ func RequireAuth(c *gin.Context) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
-		// fmt.Println(claims["foo"], claims["nbf"])
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}

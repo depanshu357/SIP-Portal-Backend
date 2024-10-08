@@ -5,19 +5,19 @@ import (
 	"sip/database/migration"
 	"sip/routes"
 	"sip/utils"
+	"sync"
 
 	"github.com/lpernett/godotenv"
 )
 
-func Run() {
+func Run(wg *sync.WaitGroup) {
 	utils.InitializeLogger()
 	utils.Logger.Info("Starting the application")
 	loadEnv()
 	initDb()
 	router := routes.InitRoutes()
-
 	router.Run(":8080")
-
+	defer wg.Done()
 	defer closeDb()
 }
 

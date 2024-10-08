@@ -10,8 +10,8 @@ import (
 func SetStudentRoutes(router *gin.Engine) {
 	student := router.Group("/student")
 	{
-		student.GET("/profile", middleware.RequireAuth, middleware.StudentAuth, controllers.GetStudentProfile)
-		student.GET("/notices", middleware.RequireAuth, middleware.StudentAuth, controllers.GetStudentNotice)
+		student.GET("/profile", middleware.RequireAuth, controllers.GetStudentProfile)
+		student.GET("/notices", middleware.RequireAuth, controllers.GetStudentNotice)
 		// 	// student.Get("/resume", controllers.GetStudentResume)
 	}
 }
