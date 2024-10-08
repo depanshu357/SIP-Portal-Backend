@@ -8,7 +8,8 @@ import (
 
 type Event struct {
 	gorm.Model
-	Title     string
-	StartDate time.Time
-	IsActive  bool
+	Title        string
+	StartDate    time.Time
+	IsActive     bool
+	AcademicYear string
 }

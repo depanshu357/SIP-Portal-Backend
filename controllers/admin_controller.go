@@ -75,23 +75,3 @@ func GetRecruiterList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"users": reruiters})
 }
 
-func CreateEvent(c *gin.Context) {
-	var req struct {
-		Title     string    `json:"title" binding:"required"`
-		StartDate time.Time `json:"start_date" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
-		return
-	}
-	eventModel := models.Event{
-		Title:     req.Title,
-		StartDate: req.StartDate,
-		IsActive:  true,
-	}
-	if err := database.DB.Create(&eventModel).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create Event"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Event created successfully"})
-}
