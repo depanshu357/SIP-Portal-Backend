@@ -3,11 +3,11 @@ package models
 import (
 	"time"
 
-	"gorm.io/gorm"
+	uuid "github.com/google/uuid"
 )
 
 type Event struct {
-	gorm.Model
+	ID           uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
 	Title        string
 	StartDate    time.Time
 	IsActive     bool

@@ -3,6 +3,7 @@ package migration
 import (
 	"sip/database"
 	"sip/models"
+	"sip/utils"
 )
 
 func Up() {
@@ -13,7 +14,9 @@ func Up() {
 	}
 
 	if !database.DB.Migrator().HasTable(&models.Student{}) {
-		database.DB.Migrator().CreateTable(&models.Student{})
+		if err := database.DB.Migrator().CreateTable(&models.Student{}); err != nil {
+			utils.Logger.Sugar().Errorf("Error creating Student table:", err)
+		}
 	}
 
 	if !database.DB.Migrator().HasTable(&models.Recruiter{}) {
@@ -35,6 +38,7 @@ func Up() {
 	if !database.DB.Migrator().HasTable(&models.Event{}) {
 		database.DB.Migrator().CreateTable(&models.Event{})
 	}
+
 }
 
 func Down() {

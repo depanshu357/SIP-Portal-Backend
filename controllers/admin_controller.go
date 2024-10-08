@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	uuid "github.com/google/uuid"
 )
 
 type UserWithoutPassword struct {
-	ID         uint
+	ID         uuid.UUID
 	Email      string
 	CreatedAt  time.Time
 	IsVerified bool
@@ -74,4 +75,3 @@ func GetRecruiterList(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"users": reruiters})
 }
-

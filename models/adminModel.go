@@ -1,12 +1,11 @@
 package models
 
-import "gorm.io/gorm"
+import uuid "github.com/google/uuid"
 
 type Admin struct {
-	gorm.Model
+	ID         uuid.UUID `gorm:"primaryKey;type:uuid"`
 	FirstName  string
 	LastName   string
 	Email      string `gorm:"unique;not null"`
-	Password   string `gorm:"not null"`
 	IsVerified bool   `gorm:"default:false"`
 }

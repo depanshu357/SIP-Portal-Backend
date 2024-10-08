@@ -1,9 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	uuid "github.com/google/uuid"
+)
 
 type Otp struct {
-	ID           uint   `gorm:"primaryKey"`
+	ID           uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	CreatedAt    time.Time
 	Email        string `gorm:"unique;not null"`
 	Otp          string `gorm:"not null"`
 	DeletionTime time.Time

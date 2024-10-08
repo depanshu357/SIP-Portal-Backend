@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type CustomClaims struct {
@@ -51,7 +52,7 @@ func RequireAuth(c *gin.Context) {
 		var user models.User
 		database.DB.First(&user, claims["sub"])
 
-		if user.ID == 0 {
+		if user.ID == uuid.Nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 		c.Set("user", user)

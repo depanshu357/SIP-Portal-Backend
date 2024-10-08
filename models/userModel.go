@@ -1,12 +1,15 @@
 package models
 
 import (
+	"time"
+
+	uuid "github.com/google/uuid"
 	"github.com/lib/pq"
-	"gorm.io/gorm"
 )
 
 type User struct {
-	gorm.Model
+	ID                uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	CreatedAt         time.Time
 	Email             string        `gorm:"unique;not null"`
 	Password          string        `gorm:"not null"`
 	IsVerified        bool          `gorm:"default:false"`

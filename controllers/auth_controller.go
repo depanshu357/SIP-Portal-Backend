@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	uuid "github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -21,8 +22,8 @@ func Signup(c *gin.Context) {
 		Email       string `json:"email" binding:"required,email"`
 		Password    string `json:"password" binding:"required,min=6"`
 		Role        string `json:"role" binding:"required"`
-		RollNo      string `json:"roll_no"`
-		CompanyName string `json:"company_name"`
+		RollNo      string `json:"rollNo"`
+		CompanyName string `json:"companyName"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.Logger.Sugar().Errorf("Signup validation failed: %v", err)
@@ -57,8 +58,9 @@ func Signup(c *gin.Context) {
 
 	if req.Role == "student" {
 		student := models.Student{
+			ID:         user.ID,
 			Email:      req.Email,
-			RollNo:     req.RollNo,
+			RollNumber: req.RollNo,
 			IsVerified: false,
 		}
 		if err := database.DB.Create(&student).Error; err != nil {
@@ -68,6 +70,7 @@ func Signup(c *gin.Context) {
 		}
 	} else if req.Role == "recruiter" {
 		company := models.Recruiter{
+			ID:         user.ID,
 			Email:      req.Email,
 			Company:    req.CompanyName,
 			IsVerified: false,
@@ -79,6 +82,7 @@ func Signup(c *gin.Context) {
 		}
 	} else if req.Role == "admin" {
 		admin := models.Admin{
+			ID:         user.ID,
 			Email:      req.Email,
 			IsVerified: false,
 		}
@@ -149,7 +153,7 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "user": user, "token": token})
 }
 
-func generateJWT(userID uint, userRole string) (string, error) {
+func generateJWT(userID uuid.UUID, userRole string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  userID,
 		"role": userRole,
@@ -296,5 +300,3 @@ func VerifyOTP(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "OTP verified successfully"})
 }
-
-
