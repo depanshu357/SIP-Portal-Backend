@@ -49,11 +49,33 @@ func RequireAuth(c *gin.Context) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 
-		var user models.User
-		database.DB.First(&user, claims["sub"])
+		subStr, ok := claims["sub"].(string)
+		if !ok {
+			utils.Logger.Sugar().Error("Invalid type for sub claim")
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
 
+		// Parse the sub string into a UUID
+		subUUID, err := uuid.Parse(subStr)
+		if err != nil {
+			utils.Logger.Sugar().Error("Invalid UUID format for sub claim: ", err)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// Query the database using the parsed UUID
+		var user models.User
+		if err := database.DB.First(&user, "id = ?", subUUID).Error; err != nil {
+			utils.Logger.Sugar().Error("User not found: ", err)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		// If the user ID is a nil UUID, reject the request
 		if user.ID == uuid.Nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
+			return
 		}
 		c.Set("user", user)
 		c.Set("role", claims["role"])
