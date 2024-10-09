@@ -9,19 +9,18 @@ import (
 )
 
 func GetStudentProfile(c *gin.Context) {
-	var req struct {
-		ID string `json:"id" binding:"required"` // id
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
+	var id = c.Query("id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID query parameter is required"})
 		return
 	}
 	var existingUser models.Student
-	if err := database.DB.Where("id = ?", req.ID).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("id = ?", id).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"user": existingUser})
+
+	c.JSON(http.StatusOK, gin.H{"profile": existingUser})
 }
 
 func UpdateProfile(c *gin.Context) {

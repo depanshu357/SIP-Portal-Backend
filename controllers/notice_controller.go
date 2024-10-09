@@ -7,13 +7,15 @@ import (
 	"sip/utils"
 
 	"github.com/gin-gonic/gin"
+	uuid "github.com/google/uuid"
 )
 
 func CreateNotice(c *gin.Context) {
 	var req struct {
-		Heading    string   `json:"heading" binding:"required"`
-		Content    string   `json:"content" binding:"required"`
-		Recipients []string `json:"recipients" binding:"required,min=1,dive,required"`
+		Heading    string    `json:"heading" binding:"required"`
+		Content    string    `json:"content" binding:"required"`
+		Recipients []string  `json:"recipients" binding:"required,min=1,dive,required"`
+		Event      uuid.UUID `json:"events"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
@@ -23,6 +25,7 @@ func CreateNotice(c *gin.Context) {
 		Heading:    req.Heading,
 		Content:    req.Content,
 		Recipients: req.Recipients,
+		Event:      req.Event,
 	}
 	if err := database.DB.Create(&noticeModel).Error; err != nil {
 		utils.Logger.Sugar().Errorf("Failed to create Notice: %v", err)
