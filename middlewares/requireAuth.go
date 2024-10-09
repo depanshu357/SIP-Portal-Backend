@@ -25,7 +25,7 @@ type CustomClaims struct {
 
 func RequireAuth(c *gin.Context) {
 	tokenString, err := c.Cookie("Authorization")
-	utils.Logger.Sugar().Info(c.Request.Header)
+	// utils.Logger.Sugar().Info(c.Request.Header)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}

@@ -25,52 +25,64 @@ func GetStudentProfile(c *gin.Context) {
 
 func UpdateProfile(c *gin.Context) {
 	var req struct {
-		ID                     uint   `json:"id" binding:"required"`                  // id
-		Name                   string `json:"name" binding:"required"`                // name
-		RollNumber             string `json:"rollNumber"`                             // rollNumber
-		Email                  string `json:"email" binding:"email"`                  // email
-		Department             string `json:"department"`                             // department
-		SecondaryDepartment    string `json:"secondaryDepartment"`                    // secondaryDepartment
-		Specialisation         string `json:"specialisation"`                         // specialisation
-		Gender                 string `json:"gender"`                                 // gender
-		DOB                    string `json:"dob"`                                    // dob (you can use `time.Time` for date handling if needed)
-		AlternateContactNumber string `json:"alternateContactNumber"`                 // alternateContactNumber
-		CurrentCPI             string `json:"currentCPI"`                             // currentCPI
-		TenthBoard             string `json:"tenthBoard"`                             // tenthBoard
-		TenthMarks             string `json:"tenthMarks"`                             // tenthMarks
-		TenthBoardYear         string `json:"tenthBoardYear"`                         // tenthBoardYear
-		EntranceExam           string `json:"entranceExam"`                           // entranceExam
-		Category               string `json:"category"`                               // category
-		CurrentAddress         string `json:"currentAddress"`                         // currentAddress
-		Disability             string `json:"disability"`                             // disability
-		ExpectedGraduationYear string `json:"expectedGraduationYear"`                 // expectedGraduationYear
-		Program                string `json:"program"`                                // program
-		SecondaryProgram       string `json:"secondaryProgram"`                       // secondaryProgram
-		Preference             string `json:"preference"`                             // preference
-		PersonalEmail          string `json:"personalEmail"`                          // personalEmail
-		ContactNumber          string `json:"contactNumber"`                          // contactNumber
-		WhatsappNumber         string `json:"whatsappNumber"`                         // whatsappNumber
-		TwelfthBoardYear       string `json:"twelfthBoardYear"`                       // twelfthBoardYear
-		TwelfthBoard           string `json:"twelfthBoard"`                           // twelfthBoard
-		TwelfthMarks           string `json:"twelfthMarks"`                           // twelfthMarks
-		EntranceExamRank       string `json:"entranceExamRank"`                       // entranceExamRank
-		CategoryRank           string `json:"categoryRank"`                           // categoryRank
-		PermanentAddress       string `json:"permanentAddress"`                       // permanentAddress
-		FriendsName            string `json:"friendsName"`                            // friendsName
-		FriendsContactDetails  string `json:"friendsContactDetails"`                  // friendsContactDetails
-		IsVerified             bool   `json:"isVerified" gorm:"default:false"`        // IsVerified
-		IsProfileVerified      bool   `json:"isProfileVerified" gorm:"default:false"` // IsProfileVerified
+		Name                   string `json:"name"`                   // name
+		RollNumber             string `json:"rollNumber"`             // rollNumber
+		Email                  string `json:"email"`                  // email
+		Department             string `json:"department"`             // department
+		SecondaryDepartment    string `json:"secondaryDepartment"`    // secondaryDepartment
+		Specialisation         string `json:"specialisation"`         // specialisation
+		Gender                 string `json:"gender"`                 // gender
+		DOB                    string `json:"dob"`                    // dob (you can use `time.Time` for date handling if needed)
+		AlternateContactNumber string `json:"alternateContactNumber"` // alternateContactNumber
+		CurrentCPI             string `json:"currentCPI"`             // currentCPI
+		TenthBoard             string `json:"tenthBoard"`             // tenthBoard
+		TenthMarks             string `json:"tenthMarks"`             // tenthMarks
+		TenthBoardYear         string `json:"tenthBoardYear"`         // tenthBoardYear
+		EntranceExam           string `json:"entranceExam"`           // entranceExam
+		Category               string `json:"category"`               // category
+		CurrentAddress         string `json:"currentAddress"`         // currentAddress
+		Disability             string `json:"disability"`             // disability
+		ExpectedGraduationYear string `json:"expectedGraduationYear"` // expectedGraduationYear
+		Program                string `json:"program"`                // program
+		SecondaryProgram       string `json:"secondaryProgram"`       // secondaryProgram
+		Preference             string `json:"preference"`             // preference
+		PersonalEmail          string `json:"personalEmail"`          // personalEmail
+		ContactNumber          string `json:"contactNumber"`          // contactNumber
+		WhatsappNumber         string `json:"whatsappNumber"`         // whatsappNumber
+		TwelfthBoardYear       string `json:"twelfthBoardYear"`       // twelfthBoardYear
+		TwelfthBoard           string `json:"twelfthBoard"`           // twelfthBoard
+		TwelfthMarks           string `json:"twelfthMarks"`           // twelfthMarks
+		EntranceExamRank       string `json:"entranceExamRank"`       // entranceExamRank
+		CategoryRank           string `json:"categoryRank"`           // categoryRank
+		PermanentAddress       string `json:"permanentAddress"`       // permanentAddress
+		FriendsName            string `json:"friendsName"`            // friendsName
+		FriendsContactDetails  string `json:"friendsContactDetails"`  // friendsContactDetails
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input data"})
+		return
+	}
+	user, exists := c.Get("user")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	userModel, ok := user.(models.User)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
+		return
+	}
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 	var existingUser models.Student
-	if err := database.DB.Where("id = ?", req.ID).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("id = ?", userModel.ID).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
 	existingUser = models.Student{
+		ID:                     userModel.ID,
 		Name:                   req.Name,
 		RollNumber:             req.RollNumber,
 		Email:                  req.Email,
@@ -103,8 +115,6 @@ func UpdateProfile(c *gin.Context) {
 		PermanentAddress:       req.PermanentAddress,
 		FriendsName:            req.FriendsName,
 		FriendsContactDetails:  req.FriendsContactDetails,
-		IsVerified:             req.IsVerified,
-		IsProfileVerified:      req.IsProfileVerified,
 	}
 	if err := database.DB.Save(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
