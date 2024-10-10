@@ -5,6 +5,7 @@ import (
 	"sip/database"
 	"sip/models"
 	"sip/utils"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,20 +51,6 @@ func GetAllNotice(c *gin.Context) {
 }
 
 func GetRecruiterNotice(c *gin.Context) {
-	user_id, exists := c.Get("user_id")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-	var notices []models.Notice
-	if err := database.DB.Where("? = ANY(recipients)", user_id).Or("? = ANY(recipients)", "recruiter").Order("created_at desc").Find(&notices).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"notices": notices})
-}
-
-func GetStudentNotice(c *gin.Context) {
 	eventId := c.Query("event")
 	if eventId == "" {
 		utils.Logger.Sugar().Error("Invalid Event ID")
@@ -77,7 +64,37 @@ func GetStudentNotice(c *gin.Context) {
 		return
 	}
 	var notices []models.Notice
-	if err := database.DB.Where("? = ANY(recipients)", user_id).Or("? = ANY(recipients)", "student").Order("created_at desc").Find(&notices, "event = ?", eventId).Error; err != nil {
+	if err := database.DB.Where("? = ANY(recipients)", user_id).Or("? = ANY(recipients)", "recruiter").Order("created_at desc").Find(&notices, "event = ?", eventId).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"notices": notices})
+}
+
+func GetStudentNotice(c *gin.Context) {
+	eventId := c.Query("eventId")
+	if eventId == "" {
+		utils.Logger.Sugar().Error("Invalid Event ID")
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	user_id, exists := c.Get("user_id")
+	//print type of user_id
+	utils.Logger.Sugar().Infof("Type of user_id: %T, value: %f", user_id, user_id)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	var notices []models.Notice
+	userIDInt, ok := user_id.(float64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User ID is not a string"})
+		return
+
+	}
+
+	if err := database.DB.Where("? = ANY(recipients)", strconv.Itoa(int(userIDInt))).Or("? = ANY(recipients)", "student").Order("created_at desc").Find(&notices, "event = ?", eventId).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
