@@ -7,15 +7,14 @@ import (
 	"sip/utils"
 
 	"github.com/gin-gonic/gin"
-	uuid "github.com/google/uuid"
 )
 
 func CreateNotice(c *gin.Context) {
 	var req struct {
-		Heading    string    `json:"heading" binding:"required"`
-		Content    string    `json:"content" binding:"required"`
-		Recipients []string  `json:"recipients" binding:"required,min=1,dive,required"`
-		Event      uuid.UUID `json:"events"`
+		Heading    string   `json:"heading" binding:"required"`
+		Content    string   `json:"content" binding:"required"`
+		Recipients []string `json:"recipients" binding:"required,min=1,dive,required"`
+		Event      uint     `json:"events"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
@@ -37,8 +36,13 @@ func CreateNotice(c *gin.Context) {
 }
 
 func GetAllNotice(c *gin.Context) {
+	eventId := c.Query("event")
+	if eventId == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
 	var notices []models.Notice
-	if err := database.DB.Order("created_at desc").Find(&notices).Error; err != nil {
+	if err := database.DB.Where("Event = ?", eventId).Order("created_at desc").Find(&notices).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
@@ -46,13 +50,13 @@ func GetAllNotice(c *gin.Context) {
 }
 
 func GetRecruiterNotice(c *gin.Context) {
-	email := c.Query("email")
-	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email query parameter is required"})
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 	var notices []models.Notice
-	if err := database.DB.Where("? = ANY(recipients)", email).Or("? = ANY(recipients)", "recruiter").Order("created_at desc").Find(&notices).Error; err != nil {
+	if err := database.DB.Where("? = ANY(recipients)", user_id).Or("? = ANY(recipients)", "recruiter").Order("created_at desc").Find(&notices).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
@@ -60,17 +64,20 @@ func GetRecruiterNotice(c *gin.Context) {
 }
 
 func GetStudentNotice(c *gin.Context) {
-	email := c.Query("email")
-	if email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Email query parameter is required"})
+	eventId := c.Query("event")
+	if eventId == "" {
+		utils.Logger.Sugar().Error("Invalid Event ID")
+		c.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	// if err := c.ShouldBindJSON(&req); err != nil {
-	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input", "details": err.Error()})
-	// 	return
-	// }
+
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
 	var notices []models.Notice
-	if err := database.DB.Where("? = ANY(recipients)", email).Or("? = ANY(recipients)", "student").Order("created_at desc").Find(&notices).Error; err != nil {
+	if err := database.DB.Where("? = ANY(recipients)", user_id).Or("? = ANY(recipients)", "student").Order("created_at desc").Find(&notices, "event = ?", eventId).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}

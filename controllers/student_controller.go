@@ -9,13 +9,14 @@ import (
 )
 
 func GetStudentProfile(c *gin.Context) {
-	var id = c.Query("id")
-	if id == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "ID query parameter is required"})
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
+
 	var existingUser models.Student
-	if err := database.DB.Where("id = ?", id).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
@@ -62,27 +63,17 @@ func UpdateProfile(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input data"})
 		return
 	}
-	user, exists := c.Get("user")
-	if !exists {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
-		return
-	}
-	userModel, ok := user.(models.User)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user type"})
-		return
-	}
+	user_id, exists := c.Get("user_id")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 	var existingUser models.Student
-	if err := database.DB.Where("id = ?", userModel.ID).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
 	existingUser = models.Student{
-		ID:                     userModel.ID,
 		Name:                   req.Name,
 		RollNumber:             req.RollNumber,
 		Email:                  req.Email,

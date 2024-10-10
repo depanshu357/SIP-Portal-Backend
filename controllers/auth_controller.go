@@ -12,7 +12,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	uuid "github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -58,7 +57,7 @@ func Signup(c *gin.Context) {
 
 	if req.Role == "student" {
 		student := models.Student{
-			ID:         user.ID,
+			User:       user,
 			Email:      req.Email,
 			RollNumber: req.RollNo,
 			IsVerified: false,
@@ -70,7 +69,7 @@ func Signup(c *gin.Context) {
 		}
 	} else if req.Role == "recruiter" {
 		company := models.Recruiter{
-			ID:         user.ID,
+			User:       user,
 			Email:      req.Email,
 			Company:    req.CompanyName,
 			IsVerified: false,
@@ -82,7 +81,7 @@ func Signup(c *gin.Context) {
 		}
 	} else if req.Role == "admin" {
 		admin := models.Admin{
-			ID:         user.ID,
+			User:       user,
 			Email:      req.Email,
 			IsVerified: false,
 		}
@@ -153,7 +152,7 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful", "user": user, "token": token})
 }
 
-func generateJWT(userID uuid.UUID, userRole string) (string, error) {
+func generateJWT(userID uint, userRole string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":  userID,
 		"role": userRole,
@@ -164,12 +163,12 @@ func generateJWT(userID uuid.UUID, userRole string) (string, error) {
 }
 
 func Validate(c *gin.Context) {
-	user, _ := c.Get("user")
+	user_id, _ := c.Get("user_id")
 
 	// has a middleware that sets the user in the context
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": user,
+		"message": user_id,
 	})
 }
 

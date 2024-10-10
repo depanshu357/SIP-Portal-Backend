@@ -1,9 +1,13 @@
 package models
 
-import uuid "github.com/google/uuid"
+import (
+	"gorm.io/gorm"
+)
 
 type Recruiter struct {
-	ID                uuid.UUID `gorm:"primaryKey;type:uuid"`
+	gorm.Model
+	UserID            uint
+	User              User `gorm:"foreignKey:UserID"`
 	Name              string
 	Email             string `gorm:"unique;not null"`
 	Company           string

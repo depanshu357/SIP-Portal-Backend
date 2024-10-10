@@ -3,16 +3,16 @@ package models
 import (
 	"time"
 
-	uuid "github.com/google/uuid"
 	"github.com/lib/pq"
+	"gorm.io/gorm"
 )
 
 type User struct {
-	ID                uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	gorm.Model
 	CreatedAt         time.Time
-	Email             string         `gorm:"unique;not null"`
-	Password          string         `gorm:"not null"`
-	IsVerified        bool           `gorm:"default:false"`
-	Role              string         `gorm:"default:student"`
-	VerifiedForEvents pq.StringArray `gorm:"type:uuid[];default:'{}'"`
+	Email             string        `gorm:"unique;not null"`
+	Password          string        `gorm:"not null"`
+	IsVerified        bool          `gorm:"default:false"`
+	Role              string        `gorm:"default:student"`
+	VerifiedForEvents pq.Int64Array `gorm:"type:integer[];default:'{}'"`
 }

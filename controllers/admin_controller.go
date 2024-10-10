@@ -7,11 +7,10 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	uuid "github.com/google/uuid"
 )
 
 type UserWithoutPassword struct {
-	ID         uuid.UUID
+	ID         uint `gorm:"primary_key"`
 	Email      string
 	CreatedAt  time.Time
 	IsVerified bool
@@ -19,15 +18,13 @@ type UserWithoutPassword struct {
 }
 
 func GetAdminProfile(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required,email"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 	var existingUser models.User
-	if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("id = ?", user_id).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}

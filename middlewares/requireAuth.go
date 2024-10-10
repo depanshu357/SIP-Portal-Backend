@@ -4,14 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sip/database"
-	"sip/models"
 	"sip/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 )
 
 type CustomClaims struct {
@@ -25,7 +22,7 @@ type CustomClaims struct {
 
 func RequireAuth(c *gin.Context) {
 	tokenString, err := c.Cookie("Authorization")
-	// utils.Logger.Sugar().Info(c.Request.Header)
+	utils.Logger.Sugar().Info(c.Request.Header)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
@@ -49,35 +46,7 @@ func RequireAuth(c *gin.Context) {
 			c.AbortWithStatus(http.StatusUnauthorized)
 		}
 
-		subStr, ok := claims["sub"].(string)
-		if !ok {
-			utils.Logger.Sugar().Error("Invalid type for sub claim")
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		// Parse the sub string into a UUID
-		subUUID, err := uuid.Parse(subStr)
-		if err != nil {
-			utils.Logger.Sugar().Error("Invalid UUID format for sub claim: ", err)
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		// Query the database using the parsed UUID
-		var user models.User
-		if err := database.DB.First(&user, "id = ?", subUUID).Error; err != nil {
-			utils.Logger.Sugar().Error("User not found: ", err)
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		// If the user ID is a nil UUID, reject the request
-		if user.ID == uuid.Nil {
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-		c.Set("user", user)
+		c.Set("user_id", claims["sub"])
 		c.Set("role", claims["role"])
 
 		c.Next()

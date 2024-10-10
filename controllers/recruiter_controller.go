@@ -9,15 +9,13 @@ import (
 )
 
 func GetRecruiterProfile(c *gin.Context) {
-	var req struct {
-		Email string `json:"email" binding:"required,email"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input"})
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
 	var existingUser models.Recruiter
-	if err := database.DB.Where("email = ?", req.Email).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
