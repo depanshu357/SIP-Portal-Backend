@@ -73,41 +73,7 @@ func UpdateProfile(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}
-	existingUser = models.Student{
-		Name:                   req.Name,
-		RollNumber:             req.RollNumber,
-		Email:                  req.Email,
-		Department:             req.Department,
-		SecondaryDepartment:    req.SecondaryDepartment,
-		Specialisation:         req.Specialisation,
-		Gender:                 req.Gender,
-		DOB:                    req.DOB,
-		AlternateContactNumber: req.AlternateContactNumber,
-		CurrentCPI:             req.CurrentCPI,
-		TenthBoard:             req.TenthBoard,
-		TenthMarks:             req.TenthMarks,
-		TenthBoardYear:         req.TenthBoardYear,
-		EntranceExam:           req.EntranceExam,
-		Category:               req.Category,
-		CurrentAddress:         req.CurrentAddress,
-		Disability:             req.Disability,
-		ExpectedGraduationYear: req.ExpectedGraduationYear,
-		Program:                req.Program,
-		SecondaryProgram:       req.SecondaryProgram,
-		Preference:             req.Preference,
-		PersonalEmail:          req.PersonalEmail,
-		ContactNumber:          req.ContactNumber,
-		WhatsappNumber:         req.WhatsappNumber,
-		TwelfthBoardYear:       req.TwelfthBoardYear,
-		TwelfthBoard:           req.TwelfthBoard,
-		TwelfthMarks:           req.TwelfthMarks,
-		EntranceExamRank:       req.EntranceExamRank,
-		CategoryRank:           req.CategoryRank,
-		PermanentAddress:       req.PermanentAddress,
-		FriendsName:            req.FriendsName,
-		FriendsContactDetails:  req.FriendsContactDetails,
-	}
-	if err := database.DB.Save(&existingUser).Error; err != nil {
+	if err := database.DB.Model(&existingUser).Updates(req).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
 		return
 	}
