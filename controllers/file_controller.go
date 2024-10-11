@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"sip/database"
+	"sip/models"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,6 +11,7 @@ import (
 func UploadFile(c *gin.Context) {
 	academicYear := c.PostForm("academic_year")
 	event := c.PostForm("event")
+	category := c.PostForm("category")
 	if academicYear == "" || event == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
 		return
@@ -20,8 +23,23 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	if err := c.SaveUploadedFile(file, "./uploads/"+academicYear+"/"+event+"/"+file.Filename); err != nil {
+	filePath := "./uploads/" + academicYear + "/" + event + "/" + file.Filename
+	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+		return
+	}
+
+	user_id := uint(c.MustGet("user_id").(float64))
+	fileModel := models.File{
+		UserID:     user_id,
+		Name:       file.Filename,
+		Event:      event,
+		Path:       filePath,
+		IsVerified: false,
+		Category:   category,
+	}
+	if err := database.DB.Create(&fileModel).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file to database"})
 		return
 	}
 
