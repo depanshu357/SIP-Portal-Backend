@@ -24,6 +24,22 @@ func GetStudentProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"profile": existingUser})
 }
 
+func GetStudentInfoForResumeName(c *gin.Context) {
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	var existingUser models.Student
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"name": existingUser.Name, "rollNumber": existingUser.RollNumber, "program": existingUser.Program, "department": existingUser.Department})
+}
+
 func UpdateProfile(c *gin.Context) {
 	var req struct {
 		Name                   string `json:"name"`                   // name

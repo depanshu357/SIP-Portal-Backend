@@ -14,6 +14,8 @@ func SetStudentRoutes(router *gin.Engine) {
 		student.GET("/notices", middleware.RequireAuth, controllers.GetStudentNotice)
 		student.POST("/update-profile", middleware.RequireAuth, controllers.UpdateProfile)
 		student.POST("/upload-file", middleware.RequireAuth, controllers.UploadFile)
+		student.GET("/info-for-resume-name", middleware.RequireAuth, controllers.GetStudentInfoForResumeName)
+		student.GET("/resume-list", middleware.RequireAuth, controllers.GetResumeList)
 		// 	// student.Get("/resume", controllers.GetStudentResume)
 	}
 }
