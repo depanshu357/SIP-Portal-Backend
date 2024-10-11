@@ -1,8 +1,11 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"path"
+	"path/filepath"
 	"sip/database"
 	"sip/models"
 	"sip/utils"
@@ -62,4 +65,30 @@ func GetResumeList(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"files": files})
+}
+
+func DownloadFile(c *gin.Context) {
+	id := c.Query("id")
+	var file models.File
+	if err := database.DB.Where("id = ?", id).First(&file).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "File not found"})
+		return
+	}
+	filePath := file.Path // File to download
+
+	// Set the headers for file download
+	c.Header("Content-Disposition", "attachment; filename="+filepath.Base(filePath))
+	c.Header("Content-Type", "application/octet-stream")
+	c.Header("Content-Length", fmt.Sprintf("%d", getFileSize(filePath)))
+
+	// Send the file to the client
+	c.File(filePath)
+}
+
+func getFileSize(filePath string) int64 {
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return 0
+	}
+	return fileInfo.Size()
 }
