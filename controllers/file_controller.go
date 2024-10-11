@@ -2,8 +2,11 @@ package controllers
 
 import (
 	"net/http"
+	"path"
 	"sip/database"
 	"sip/models"
+	"sip/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,7 +26,8 @@ func UploadFile(c *gin.Context) {
 		return
 	}
 
-	filePath := "./uploads/" + academicYear + "/" + event + "/" + file.Filename
+	fileName := strings.TrimSuffix(file.Filename, path.Ext(file.Filename))
+	filePath := "./uploads/" + academicYear + "/" + event + "/" + fileName + path.Ext(file.Filename)
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 		return
@@ -49,9 +53,11 @@ func UploadFile(c *gin.Context) {
 
 func GetResumeList(c *gin.Context) {
 	event := c.Query("event")
+	academic_year := c.Query("academic_year")
+	utils.Logger.Sugar().Info(event, academic_year)
 	user_id := uint(c.MustGet("user_id").(float64))
 	var files []models.File
-	if err := database.DB.Where("user_id = ? AND event = ?", user_id, event).Find(&files).Error; err != nil {
+	if err := database.DB.Where("user_id = ? AND event = ? AND academic_year = ?", user_id, event, academic_year).Find(&files).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch files"})
 		return
 	}
