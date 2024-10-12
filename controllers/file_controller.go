@@ -67,6 +67,34 @@ func GetResumeList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"files": files})
 }
 
+func GetResumeListForAdmin(c *gin.Context) {
+	event := c.Query("event")
+	academic_year := c.Query("academic_year")
+	utils.Logger.Sugar().Info(event, academic_year)
+	var files []models.File
+	if err := database.DB.Where("event = ? AND academic_year = ?", event, academic_year).Find(&files).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch files"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"files": files})
+}
+
+func VerifyResume(c *gin.Context) {
+	var req struct {
+		ID    uint `json:"id"`
+		Value bool `json:"value"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	if err := database.DB.Model(&models.File{}).Where("id = ?", req.ID).Update("is_verified", req.Value).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to change verification status"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "File verification status changed"})
+}
+
 func DownloadFile(c *gin.Context) {
 	id := c.Query("id")
 	var file models.File

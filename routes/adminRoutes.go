@@ -2,6 +2,7 @@ package routes
 
 import (
 	"sip/controllers"
+	middleware "sip/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,5 +17,7 @@ func setAdminRoutes(router *gin.Engine) {
 		admin.GET("/notices", controllers.GetAllNotice)
 		admin.POST("/create-event", controllers.CreateEvent)
 		admin.PUT("/toggle-event-activation", controllers.ToggleEventActivation)
+		admin.GET("/resume-list", controllers.GetResumeListForAdmin)
+		admin.POST("/verify-resume", middleware.RequireAuth, controllers.VerifyResume)
 	}
 }
