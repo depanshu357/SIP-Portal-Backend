@@ -113,6 +113,24 @@ func DownloadFile(c *gin.Context) {
 	c.File(filePath)
 }
 
+func DeleteFile(c *gin.Context) {
+	id := c.Query("id")
+	var file models.File
+	if err := database.DB.Where("id = ?", id).First(&file).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "File not found"})
+		return
+	}
+	filePath := file.Path
+	if err := os.Remove(filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete file"})
+		return
+	}
+	if err := database.DB.Delete(&file).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete file from database"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "File deleted successfully"})
+}
 func getFileSize(filePath string) int64 {
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {

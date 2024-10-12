@@ -17,5 +17,6 @@ func SetAuthRoutes(router *gin.Engine) {
 		auth.POST("/verify-otp", controllers.VerifyOTP)
 		auth.PUT("/change-password", controllers.ChangePassword)
 		auth.GET("/events", controllers.GetAllEvents)
+		auth.GET("/download-file", middleware.RequireAuth, controllers.DownloadFile)
 	}
 }

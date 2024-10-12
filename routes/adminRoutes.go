@@ -19,5 +19,6 @@ func setAdminRoutes(router *gin.Engine) {
 		admin.PUT("/toggle-event-activation", controllers.ToggleEventActivation)
 		admin.GET("/resume-list", controllers.GetResumeListForAdmin)
 		admin.POST("/verify-resume", middleware.RequireAuth, controllers.VerifyResume)
+		admin.DELETE("/delete-resume", middleware.RequireAuth, controllers.DeleteFile)
 	}
 }
