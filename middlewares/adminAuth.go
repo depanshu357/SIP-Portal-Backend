@@ -1,28 +1,17 @@
 package middleware
 
 import (
-	"sip/models"
-	"sip/utils"
-
 	"github.com/gin-gonic/gin"
 )
 
 func AdminAuth(c *gin.Context) {
-	user, exists := c.Get("user")
+	role, exists := c.Get("role")
 	if !exists {
-		utils.Logger.Sugar().Error("User not found in context")
-		c.AbortWithStatusJSON(403, gin.H{"error": "Forbidden"})
+		c.AbortWithStatusJSON(401, gin.H{"error": "Unauthorized"})
 		return
 	}
-
-	if userModel, ok := user.(models.User); ok {
-		if userModel.Role != "admin" && userModel.Role != "superadmin" {
-			c.AbortWithStatusJSON(403, gin.H{"error": "Forbidden"})
-			return
-		}
-	} else {
-		utils.Logger.Sugar().Error("Failed to cast user to models.User")
-		c.AbortWithStatusJSON(403, gin.H{"error": "Forbidden"})
+	if role != "admin" && role != "superadmin" {
+		c.AbortWithStatusJSON(401, gin.H{"error": "Unauthorized"})
 		return
 	}
 

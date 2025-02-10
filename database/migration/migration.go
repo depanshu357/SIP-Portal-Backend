@@ -9,38 +9,36 @@ import (
 func Up() {
 	// migrate if the database does not exist
 
-	if !database.DB.Migrator().HasTable(&models.User{}) {
-		database.DB.Migrator().CreateTable(&models.User{})
+	if err := database.DB.Migrator().AutoMigrate(&models.User{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating User table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.Student{}) {
-		if err := database.DB.Migrator().CreateTable(&models.Student{}); err != nil {
-			utils.Logger.Sugar().Errorf("Error creating Student table:", err)
-		}
+	if err := database.DB.Migrator().AutoMigrate(&models.Student{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating Student table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.Recruiter{}) {
-		database.DB.Migrator().CreateTable(&models.Recruiter{})
+	if err := database.DB.Migrator().AutoMigrate(&models.Recruiter{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating Recruiter table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.Admin{}) {
-		database.DB.Migrator().CreateTable(&models.Admin{})
+	if err := database.DB.Migrator().AutoMigrate(&models.Admin{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating Admin table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.Otp{}) {
-		database.DB.Migrator().CreateTable(&models.Otp{})
+	if err := database.DB.Migrator().AutoMigrate(&models.Otp{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating Otp table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.Notice{}) {
-		database.DB.Migrator().CreateTable(&models.Notice{})
+	if err := database.DB.Migrator().AutoMigrate(&models.Notice{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating Notice table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.Event{}) {
-		database.DB.Migrator().CreateTable(&models.Event{})
+	if err := database.DB.Migrator().AutoMigrate(&models.Event{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating Event table:", err)
 	}
 
-	if !database.DB.Migrator().HasTable(&models.File{}) {
-		database.DB.Migrator().CreateTable(&models.File{})
+	if err := database.DB.Migrator().AutoMigrate(&models.File{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating File table:", err)
 	}
 
 }
