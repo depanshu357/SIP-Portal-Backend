@@ -41,6 +41,10 @@ func Up() {
 		utils.Logger.Sugar().Errorf("Error migrating File table:", err)
 	}
 
+	if err := database.DB.Migrator().AutoMigrate(&models.JobDescription{}); err != nil {
+		utils.Logger.Sugar().Errorf("Error migrating JobDescription table:", err)
+	}
+
 }
 
 func Down() {
@@ -52,4 +56,5 @@ func Down() {
 	database.DB.Migrator().DropTable((&models.Notice{}))
 	database.DB.Migrator().DropTable((&models.Event{}))
 	database.DB.Migrator().DropTable((&models.File{}))
+	database.DB.Migrator().DropTable((&models.JobDescription{}))
 }
