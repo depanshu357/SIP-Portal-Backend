@@ -26,10 +26,11 @@ func GetRecruiterProfile(c *gin.Context) {
 
 func UpdateRecruiterProfile(c *gin.Context) {
 	var req struct {
-		Company        string `json:"Company"`
-		Email          string `json:"Email"`
-		ContactNumber  string `json:"ContactNumber"`
-		AdditionalInfo string `json:"AdditionalInfo"`
+		Company          string `json:"Company"`
+		Email            string `json:"Email"`
+		ContactNumber    string `json:"ContactNumber"`
+		AdditionalInfo   string `json:"AdditionalInfo"`
+		NatureOfBusiness string `json:"NatureOfBusiness"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -57,11 +58,12 @@ func UpdateRecruiterProfile(c *gin.Context) {
 
 func CreateJobDescription(c *gin.Context) {
 	var req struct {
-		Title       string `json:"title"`
-		Description string `json:"description"`
-		Location    string `json:"location"`
-		Stipend     string `json:"stipend"`
-		EventID     uint   `json:"eventId"`
+		Title       string   `json:"title"`
+		Description string   `json:"description"`
+		Location    string   `json:"location"`
+		Stipend     string   `json:"stipend"`
+		EventID     uint     `json:"eventId"`
+		Eligibility []string `json:"eligibility"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -89,6 +91,7 @@ func CreateJobDescription(c *gin.Context) {
 		Stipend:     req.Stipend,
 		RecruiterID: existingUser.ID,
 		EventID:     existingEvent.ID,
+		Eligibility: req.Eligibility,
 	}
 	if err := database.DB.Create(&jobDescription).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create job description"})

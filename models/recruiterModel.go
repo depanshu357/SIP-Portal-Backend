@@ -13,6 +13,7 @@ type Recruiter struct {
 	Company           string
 	IsVerified        bool `gorm:"default:false"`
 	IsProfileVerified bool `gorm:"default:false"`
-	ContactNumber    string
+	ContactNumber     string
+	NatureOfBusiness  string
 	AdditionalInfo    string
 }
