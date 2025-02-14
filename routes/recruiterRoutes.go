@@ -14,6 +14,8 @@ func SetRecruiterRoutes(router *gin.Engine) {
 		recruiter.GET("/notices", middleware.RequireAuth, controllers.GetRecruiterNotice)
 		recruiter.POST("/update-profile", middleware.RequireAuth, controllers.UpdateRecruiterProfile)
 		recruiter.POST("/create-job", middleware.RequireAuth, controllers.CreateJobDescription)
+		recruiter.GET("/job-descriptions", middleware.RequireAuth, controllers.GetJobDescriptions)
+		recruiter.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
 		// recruiter.Get("/jobs", controllers.GetRecruiterJobs)
 	}
 }

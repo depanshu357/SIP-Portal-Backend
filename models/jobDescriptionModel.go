@@ -1,6 +1,8 @@
 package models
 
 import (
+	"time"
+
 	"github.com/lib/pq"
 	"gorm.io/gorm"
 )
@@ -17,4 +19,14 @@ type JobDescription struct {
 	Location    string         `gorm:"not null"`
 	Stipend     string         `gorm:"not null"`
 	Eligibility pq.StringArray `gorm:"type:text[]"`
+	Deadline    time.Time
+	Visible     bool `gorm:"default:false"`
+}
+
+type JobDescriptionResponse struct {
+	ID       uint
+	Profile  string
+	Title    string
+	Deadline time.Time
+	Visible  bool
 }

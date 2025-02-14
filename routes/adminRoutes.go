@@ -20,5 +20,7 @@ func setAdminRoutes(router *gin.Engine) {
 		admin.GET("/resume-list", controllers.GetResumeListForAdmin)
 		admin.POST("/verify-resume", middleware.RequireAuth, controllers.VerifyResume)
 		admin.DELETE("/delete-resume", middleware.RequireAuth, middleware.AdminAuth, controllers.DeleteFile)
+		admin.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
+
 	}
 }

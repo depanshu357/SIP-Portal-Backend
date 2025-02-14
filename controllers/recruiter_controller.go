@@ -24,6 +24,36 @@ func GetRecruiterProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"user": existingUser})
 }
 
+func GetJobDescriptions(c *gin.Context) {
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	eventID := c.Query("eventId")
+	var existingUser models.Recruiter
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	var jobDescriptions []models.JobDescription
+	if err := database.DB.Where("recruiter_id = ? AND event_id = ?", existingUser.ID, eventID).Find(&jobDescriptions).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Job descriptions not found"})
+		return
+	}
+	var jobDescriptionResponses []models.JobDescriptionResponse
+	for _, jobDescription := range jobDescriptions {
+		jobDescriptionResponses = append(jobDescriptionResponses, models.JobDescriptionResponse{
+			ID:       jobDescription.ID,
+			Title:    jobDescription.Title,
+			Deadline: jobDescription.Deadline,
+			Visible:  jobDescription.Visible,
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{"jobDescriptions": jobDescriptionResponses})
+}
+
 func UpdateRecruiterProfile(c *gin.Context) {
 	var req struct {
 		Company          string `json:"Company"`
