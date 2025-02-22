@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sip/database"
 	"sip/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -88,12 +89,13 @@ func UpdateRecruiterProfile(c *gin.Context) {
 
 func CreateJobDescription(c *gin.Context) {
 	var req struct {
-		Title       string   `json:"title"`
-		Description string   `json:"description"`
-		Location    string   `json:"location"`
-		Stipend     string   `json:"stipend"`
-		EventID     uint     `json:"eventId"`
-		Eligibility []string `json:"eligibility"`
+		Title       string    `json:"title"`
+		Description string    `json:"description"`
+		Location    string    `json:"location"`
+		Stipend     string    `json:"stipend"`
+		EventID     uint      `json:"eventId"`
+		Eligibility []string  `json:"eligibility"`
+		Deadline    time.Time `json:"deadline"`
 	}
 	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -122,11 +124,57 @@ func CreateJobDescription(c *gin.Context) {
 		RecruiterID: existingUser.ID,
 		EventID:     existingEvent.ID,
 		Eligibility: req.Eligibility,
+		Deadline:    req.Deadline,
 	}
 	if err := database.DB.Create(&jobDescription).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create job description"})
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{"message": "Job Description created successfully"})
+}
 
-	fmt.Println(req)
+func EditJobDescription(c *gin.Context) {
+	var req struct {
+		ID          uint      `json:"id"`
+		Title       string    `json:"title"`
+		Description string    `json:"description"`
+		Location    string    `json:"location"`
+		Stipend     string    `json:"stipend"`
+		EventID     uint      `json:"eventId"`
+		Eligibility []string  `json:"eligibility"`
+		Deadline    time.Time `json:"deadline"`
+	}
+	if err := c.BindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	var existingUser models.Recruiter
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	var existingJobDescription models.JobDescription
+	if err := database.DB.Where("id = ? AND recruiter_id = ?", req.ID, existingUser.ID).First(&existingJobDescription).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Job description not found"})
+		return
+	}
+	if err := database.DB.Model(&existingJobDescription).Updates(models.JobDescription{
+		Title:       req.Title,
+		Description: req.Description,
+		Location:    req.Location,
+		Stipend:     req.Stipend,
+		EventID:     req.EventID,
+		Eligibility: req.Eligibility,
+		Deadline:    req.Deadline,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update job description"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Job description updated successfully"})
 }
