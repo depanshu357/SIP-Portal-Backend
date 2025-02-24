@@ -15,10 +15,10 @@ import (
 )
 
 func UploadFile(c *gin.Context) {
-	academicYear := c.PostForm("academic_year")
-	event := c.PostForm("event")
+	eventID := c.PostForm("eventId")
 	category := c.PostForm("category")
-	if academicYear == "" || event == "" {
+	fmt.Println("is it working?")
+	if eventID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
 		return
 	}
@@ -28,9 +28,14 @@ func UploadFile(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "File is required", "details": err.Error()})
 		return
 	}
+	var existingEvent models.Event
+	if err := database.DB.Where("id = ?", eventID).First(&existingEvent).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Proforma not found"})
+		return
+	}
 
 	fileName := strings.TrimSuffix(file.Filename, path.Ext(file.Filename))
-	filePath := "./uploads/" + academicYear + "/" + event + "/" + fileName + path.Ext(file.Filename)
+	filePath := "./uploads/" + existingEvent.AcademicYear + "/" + existingEvent.Title + "/" + fileName + path.Ext(file.Filename)
 	if err := c.SaveUploadedFile(file, filePath); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 		return
@@ -38,13 +43,12 @@ func UploadFile(c *gin.Context) {
 
 	user_id := uint(c.MustGet("user_id").(float64))
 	fileModel := models.File{
-		UserID:       user_id,
-		Name:         file.Filename,
-		Event:        event,
-		Path:         filePath,
-		IsVerified:   false,
-		Category:     category,
-		AcademicYear: academicYear,
+		UserID:     user_id,
+		Name:       file.Filename,
+		EventID:    existingEvent.ID,
+		Path:       filePath,
+		IsVerified: false,
+		Category:   category,
 	}
 	if err := database.DB.Create(&fileModel).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save file to database"})
@@ -55,12 +59,11 @@ func UploadFile(c *gin.Context) {
 }
 
 func GetResumeList(c *gin.Context) {
-	event := c.Query("event")
-	academic_year := c.Query("academic_year")
-	utils.Logger.Sugar().Info(event, academic_year)
+	eventID := c.Query("eventId")
+	utils.Logger.Sugar().Info(eventID)
 	user_id := uint(c.MustGet("user_id").(float64))
 	var files []models.File
-	if err := database.DB.Where("user_id = ? AND event = ? AND academic_year = ?", user_id, event, academic_year).Find(&files).Error; err != nil {
+	if err := database.DB.Where("user_id = ? AND event_id = ?", user_id, eventID).Find(&files).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch files"})
 		return
 	}
@@ -68,11 +71,10 @@ func GetResumeList(c *gin.Context) {
 }
 
 func GetResumeListForAdmin(c *gin.Context) {
-	event := c.Query("event")
-	academic_year := c.Query("academic_year")
-	utils.Logger.Sugar().Info(event, academic_year)
+	eventID := c.Query("eventId")
+	utils.Logger.Sugar().Info(eventID)
 	var files []models.File
-	if err := database.DB.Where("event = ? AND academic_year = ?", event, academic_year).Find(&files).Error; err != nil {
+	if err := database.DB.Where("event_id = ?", eventID).Find(&files).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch files"})
 		return
 	}

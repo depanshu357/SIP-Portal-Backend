@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sip/database"
 	"sip/models"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -94,4 +95,29 @@ func UpdateProfile(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User updated successfully"})
+}
+
+func GetJobDescriptionListForStudent(c *gin.Context) {
+	eventID := c.Query("eventID")
+	if eventID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "eventID is required"})
+		return
+	}
+	type JobDescriptionList struct {
+		ID       int       `gorm:"column:id"`
+		Title    string    `gorm:"column:title"`
+		Deadline time.Time `gorm:"column:deadline"`
+		Company  string    `gorm:"column:company"`
+	}
+	var jobDescriptionList []JobDescriptionList
+	if err := database.DB.Table("job_descriptions").
+		Joins("JOIN recruiters ON recruiters.id = job_descriptions.recruiter_id").
+		Select("job_descriptions.id, job_descriptions.title, job_descriptions.deadline, job_descriptions.visible, recruiters.company as company").
+		Where("job_descriptions.event_id = ?", eventID).
+		Where("job_descriptions.visible = ?", true).
+		Find(&jobDescriptionList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"jobDescriptionList": jobDescriptionList})
 }

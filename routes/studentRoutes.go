@@ -17,6 +17,6 @@ func SetStudentRoutes(router *gin.Engine) {
 		student.GET("/info-for-resume-name", middleware.RequireAuth, controllers.GetStudentInfoForResumeName)
 		student.GET("/resume-list", middleware.RequireAuth, controllers.GetResumeList)
 		student.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
-
+		student.GET("/get-job-description-list", middleware.RequireAuth, controllers.GetJobDescriptionListForStudent)
 	}
 }
