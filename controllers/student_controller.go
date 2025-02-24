@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sip/database"
 	"sip/models"
+	"sip/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -120,4 +121,61 @@ func GetJobDescriptionListForStudent(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"jobDescriptionList": jobDescriptionList})
+}
+
+func SubmitJobApplication(c *gin.Context) {
+	var req struct {
+		JobID  int `json:"jobId"`
+		FileID int `json:"fileId"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid input data"})
+		return
+	}
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	var existingStudent models.Student
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingStudent).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	application := models.Applicant{
+		FileID:           uint(req.FileID),
+		JobDescriptionID: uint(req.JobID),
+		StudentID:        existingStudent.ID,
+	}
+	if err := database.DB.Create(&application).Error; err != nil {
+		utils.Logger.Sugar().Errorf("Failed to apply for job: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to apply for job"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "applied for job successfully"})
+}
+
+func GetListOfAppliedJobIds(c *gin.Context) {
+	user_id, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	var existingStudent models.Student
+	if err := database.DB.Where("user_id = ?", user_id).First(&existingStudent).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	type JobId struct {
+		JobDescriptionID uint `gorm:"column:job_description_id"`
+	}
+	var JobIdList []JobId
+	if err := database.DB.Table("applicants").
+		Select("job_description_id").
+		Where("student_id = ?", existingStudent.ID).
+		Find(&JobIdList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching proforma"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"appliedJobIdList": JobIdList})
 }

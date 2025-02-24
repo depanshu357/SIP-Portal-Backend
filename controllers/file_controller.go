@@ -70,6 +70,18 @@ func GetResumeList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"files": files})
 }
 
+func GetResumeListForStudentApplication(c *gin.Context) {
+	eventID := c.Query("eventId")
+	utils.Logger.Sugar().Info(eventID)
+	user_id := uint(c.MustGet("user_id").(float64))
+	var files []models.File
+	if err := database.DB.Where("user_id = ? AND event_id = ? AND category = ? AND is_verified = ?", user_id, eventID, "single", true).Find(&files).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch files"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"files": files})
+}
+
 func GetResumeListForAdmin(c *gin.Context) {
 	eventID := c.Query("eventId")
 	utils.Logger.Sugar().Info(eventID)

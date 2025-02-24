@@ -18,5 +18,8 @@ func SetStudentRoutes(router *gin.Engine) {
 		student.GET("/resume-list", middleware.RequireAuth, controllers.GetResumeList)
 		student.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
 		student.GET("/get-job-description-list", middleware.RequireAuth, controllers.GetJobDescriptionListForStudent)
+		student.GET("/get-resume-list-for-application", middleware.RequireAuth, controllers.GetResumeListForStudentApplication)
+		student.POST("/apply-for-job", middleware.RequireAuth, controllers.SubmitJobApplication)
+		student.GET("/applied-job-id-list", middleware.RequireAuth, controllers.GetListOfAppliedJobIds)
 	}
 }
