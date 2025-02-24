@@ -40,7 +40,6 @@ func RequireAuth(c *gin.Context) {
 		utils.Logger.Sugar().Panic(err)
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
-
 	if claims, ok := token.Claims.(jwt.MapClaims); ok {
 		if float64(time.Now().Unix()) > claims["exp"].(float64) {
 			c.AbortWithStatus(http.StatusUnauthorized)
@@ -48,7 +47,6 @@ func RequireAuth(c *gin.Context) {
 
 		c.Set("user_id", claims["sub"])
 		c.Set("role", claims["role"])
-
 		c.Next()
 	} else {
 		c.AbortWithStatus(http.StatusUnauthorized)

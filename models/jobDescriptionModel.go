@@ -12,8 +12,7 @@ type JobDescription struct {
 	RecruiterID uint
 	Recruiter   Recruiter `gorm:"foreignKey:RecruiterID"`
 	EventID     uint
-	Event       Event `gorm:"foreignKey:EventID"`
-	Profile     string
+	Event       Event          `gorm:"foreignKey:EventID"`
 	Title       string         `gorm:"not null"`
 	Description string         `gorm:"not null"`
 	Location    string         `gorm:"not null"`

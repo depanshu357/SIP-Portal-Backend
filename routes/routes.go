@@ -1,6 +1,8 @@
 package routes
 
 import (
+	"sip/controllers"
+	middleware "sip/middlewares"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -22,11 +24,11 @@ func InitRoutes() *gin.Engine {
 			"message": "Hello, world!",
 		})
 	})
+	router.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
 	SetAuthRoutes(router)
 	setAdminRoutes(router)
 	SetStudentRoutes(router)
 	SetRecruiterRoutes(router)
-	// set routes for remaining paths
 	router.NoRoute(func(c *gin.Context) {
 		c.JSON(404, gin.H{"error": "This route does not exist"})
 	})

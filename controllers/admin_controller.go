@@ -72,3 +72,26 @@ func GetRecruiterList(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"users": reruiters})
 }
+
+type JobDescriptionList struct {
+	ID       int       `gorm:"column:id"`
+	Title    string    `gorm:"column:title"`
+	Deadline time.Time `gorm:"column:deadline"`
+	Visible  bool      `gorm:"column:visible"`
+	Company  string    `gorm:"column:company"`
+}
+
+func GetAllJobDescriptions(c *gin.Context) {
+	var jobDescriptionList []JobDescriptionList
+	eventId := c.Query("event")
+	if err := database.DB.Table("job_descriptions").
+		Joins("JOIN recruiters ON recruiters.id = job_descriptions.recruiter_id").
+		Select("job_descriptions.id, job_descriptions.title, job_descriptions.deadline, job_descriptions.visible, recruiters.company as company").
+		Where("job_descriptions.event_id = ?", eventId).
+		Find(&jobDescriptionList).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"jobDescriptionList": jobDescriptionList})
+}
