@@ -23,5 +23,6 @@ func setAdminRoutes(router *gin.Engine) {
 		admin.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
 		admin.GET("/job-descriptions", middleware.RequireAuth, controllers.GetAllJobDescriptions)
 		admin.PUT("/toggle-proforma-visibility", middleware.RequireAuth, middleware.AdminAuth, controllers.ToggleProformaVisibility)
+		admin.GET("/get-applicants", middleware.RequireAuth, controllers.GetListOfAppliedCandidates)
 	}
 }
