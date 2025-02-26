@@ -24,13 +24,12 @@ type Proforma struct {
 
 func GetProforma(c *gin.Context) {
 	proformaId := c.Query("proformaId")
-	eventId := c.Query("eventId")
 
 	var proforma Proforma
 	if err := database.DB.Table("job_descriptions").
 		Joins("JOIN recruiters ON recruiters.id = job_descriptions.recruiter_id").
 		Select("job_descriptions.id, job_descriptions.title, job_descriptions.deadline, job_descriptions.visible, job_descriptions.stipend, job_descriptions.location, job_descriptions.description, job_descriptions.eligibility, recruiters.company as company").
-		Where("job_descriptions.event_id = ?", eventId).Where("job_descriptions.id = ?", proformaId).
+		Where("job_descriptions.id = ?", proformaId).
 		First(&proforma).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching proforma"})
 		return
