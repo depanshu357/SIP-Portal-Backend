@@ -36,6 +36,16 @@ func CreateNotice(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Notice created successfully"})
 }
 
+func DeleteNotice(c *gin.Context) {
+	id := c.Query("id")
+	if err := database.DB.Where("id = ?", id).Delete(&models.Notice{}).Error; err != nil {
+		utils.Logger.Sugar().Errorf("Failed to delete Notice: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete Notice"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Notice deleted successfully"})
+}
+
 func GetAllNotice(c *gin.Context) {
 	eventId := c.Query("event")
 	if eventId == "" {

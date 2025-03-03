@@ -40,6 +40,4 @@ type Student struct {
 	PermanentAddress       string // permanentAddress
 	FriendsName            string // friendsName
 	FriendsContactDetails  string // friendsContactDetails
-	IsVerified             bool   `gorm:"default:false"` // IsVerified
-	IsProfileVerified      bool   `gorm:"default:false"` // IsProfileVerified
 }

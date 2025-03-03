@@ -60,7 +60,6 @@ func Signup(c *gin.Context) {
 			User:       user,
 			Email:      req.Email,
 			RollNumber: req.RollNo,
-			IsVerified: false,
 		}
 		if err := database.DB.Create(&student).Error; err != nil {
 			utils.Logger.Sugar().Errorf("Failed to create student: %v", err)
@@ -69,10 +68,9 @@ func Signup(c *gin.Context) {
 		}
 	} else if req.Role == "recruiter" {
 		company := models.Recruiter{
-			User:       user,
-			Email:      req.Email,
-			Company:    req.CompanyName,
-			IsVerified: false,
+			User:    user,
+			Email:   req.Email,
+			Company: req.CompanyName,
 		}
 		if err := database.DB.Create(&company).Error; err != nil {
 			utils.Logger.Sugar().Errorf("Failed to create company: %v", err)
@@ -81,9 +79,8 @@ func Signup(c *gin.Context) {
 		}
 	} else if req.Role == "admin" {
 		admin := models.Admin{
-			User:       user,
-			Email:      req.Email,
-			IsVerified: false,
+			User:  user,
+			Email: req.Email,
 		}
 		if err := database.DB.Create(&admin).Error; err != nil {
 			utils.Logger.Sugar().Errorf("Failed to create admin: %v", err)

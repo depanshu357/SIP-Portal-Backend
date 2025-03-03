@@ -6,14 +6,12 @@ import (
 
 type Recruiter struct {
 	gorm.Model
-	UserID            uint
-	User              User `gorm:"foreignKey:UserID"`
-	Name              string
-	Email             string `gorm:"unique;not null"`
-	Company           string
-	IsVerified        bool `gorm:"default:false"`
-	IsProfileVerified bool `gorm:"default:false"`
-	ContactNumber     string
-	NatureOfBusiness  string
-	AdditionalInfo    string
+	UserID           uint
+	User             User `gorm:"foreignKey:UserID"`
+	Name             string
+	Email            string `gorm:"unique;not null"`
+	Company          string
+	ContactNumber    string
+	NatureOfBusiness string
+	AdditionalInfo   string
 }

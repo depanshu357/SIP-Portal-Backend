@@ -6,9 +6,8 @@ import (
 
 type Admin struct {
 	gorm.Model
-	UserID     uint
-	User       User `gorm:"foreignKey:UserID"`
-	Name       string
-	Email      string `gorm:"unique;not null"`
-	IsVerified bool   `gorm:"default:false"`
+	UserID uint
+	User   User `gorm:"foreignKey:UserID"`
+	Name   string
+	Email  string `gorm:"unique;not null"`
 }

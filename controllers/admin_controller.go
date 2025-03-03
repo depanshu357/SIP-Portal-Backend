@@ -1,20 +1,22 @@
 package controllers
 
 import (
+	"fmt"
 	"net/http"
 	"sip/database"
 	"sip/models"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 type UserWithoutPassword struct {
-	ID         uint `gorm:"primary_key"`
-	Email      string
-	CreatedAt  time.Time
-	IsVerified bool
-	Role       string
+	ID             uint `gorm:"primary_key"`
+	Email          string
+	CreatedAt      time.Time
+	HasAdminAccess bool
+	Role           string
 }
 
 func GetAdminProfile(c *gin.Context) {
@@ -40,15 +42,13 @@ func GetAdminList(c *gin.Context) {
 	}
 	var usersWithoutPassword []UserWithoutPassword
 
-	// Map data from the original User struct to the new struct
 	for _, user := range users {
 		userWithoutPassword := UserWithoutPassword{
-			ID:         user.ID,
-			Email:      user.Email,
-			CreatedAt:  user.CreatedAt,
-			IsVerified: user.IsVerified,
-			Role:       user.Role,
-			// Map other fields as necessary
+			ID:             user.ID,
+			Email:          user.Email,
+			CreatedAt:      user.CreatedAt,
+			HasAdminAccess: user.HasAdminAccess,
+			Role:           user.Role,
 		}
 		usersWithoutPassword = append(usersWithoutPassword, userWithoutPassword)
 	}
@@ -56,8 +56,36 @@ func GetAdminList(c *gin.Context) {
 }
 
 func GetStudentList(c *gin.Context) {
-	var students []models.Student
-	if err := database.DB.Find(&students).Error; err != nil {
+	type StudentInfo struct {
+		ID                int    `gorm:"column:id"`
+		RollNumber        string `gorm:"column:roll_number"`
+		Email             string `gorm:"column:email"`
+		IsProfileVerified bool   `gorm:"column:is_profile_verified"`
+	}
+	var students []StudentInfo
+	if err := database.DB.Table("students").
+		Joins("JOIN users ON users.id = students.user_id").Select("users.id as id", "roll_number", "students.email as email", "is_profile_verified").
+		Find(&students).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": students})
+}
+
+func GetStudentListForEvent(c *gin.Context) {
+	type StudentInfo struct {
+		ID                int            `gorm:"column:id"`
+		RollNumber        string         `gorm:"column:roll_number"`
+		Email             string         `gorm:"column:email"`
+		VerifiedForEvents pq.Int64Array  `gorm:"type:integer[];default:'{}'"`
+		FrozenForEvents   pq.Int64Array  `gorm:"type:integer[];default:'{}'"`
+		ReasonForFreeze   pq.StringArray `gorm:"type:text[];default:'{}'"`
+	}
+	var students []StudentInfo
+	if err := database.DB.Table("students").
+		Joins("JOIN users ON users.id = students.user_id").Select("users.id as id", "roll_number", "students.email as email", "verified_for_events", "frozen_for_events", "reason_for_freeze").
+		Where("is_profile_verified = ?", true).
+		Find(&students).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
@@ -65,12 +93,20 @@ func GetStudentList(c *gin.Context) {
 }
 
 func GetRecruiterList(c *gin.Context) {
-	var reruiters []models.Recruiter
-	if err := database.DB.Find(&reruiters).Error; err != nil {
+	type RecruiterInfo struct {
+		ID                int    `gorm:"column:id"`
+		Company           string `gorm:"column:company"`
+		Email             string `gorm:"column:email"`
+		IsProfileVerified bool   `gorm:"column:is_profile_verified"`
+	}
+	var recruiters []RecruiterInfo
+	if err := database.DB.Table("recruiters").
+		Joins("JOIN users ON users.id = recruiters.user_id").Select("users.id as id", "company", "recruiters.email as email", "is_profile_verified").
+		Find(&recruiters).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"users": reruiters})
+	c.JSON(http.StatusOK, gin.H{"users": recruiters})
 }
 
 type JobDescriptionList struct {
@@ -94,4 +130,115 @@ func GetAllJobDescriptions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"jobDescriptionList": jobDescriptionList})
+}
+
+func ChangeAdminAccess(c *gin.Context) {
+	user_id, exists := c.Get("user_id")
+	role, role_exists := c.Get("role")
+	if !exists || !role_exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	if role != "superadmin" {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Not a Super Admin"})
+		return
+	}
+	var existingUser models.User
+	if err := database.DB.Where("id = ?", user_id).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	existingUser.HasAdminAccess = !existingUser.HasAdminAccess
+	if err := database.DB.Save(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Admin Access"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Admin Access updated successfully"})
+}
+
+func ChangeProfileVerification(c *gin.Context) {
+	var req struct {
+		ID uint `json:"id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	var existingUser models.User
+	if err := database.DB.Where("id = ?", req.ID).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	existingUser.IsProfileVerified = !existingUser.IsProfileVerified
+	if err := database.DB.Save(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update Profile Verification"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Profile Verification updated successfully"})
+}
+
+func ToggleVerificationForEvent(c *gin.Context) {
+	var req struct {
+		ID    int `json:"id"`
+		Event int `json:"event"`
+	}
+	fmt.Println(req)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	var existingUser models.User
+	if err := database.DB.Where("id = ?", req.ID).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	eventExists := false
+	for i, event := range existingUser.VerifiedForEvents {
+		if event == int64(req.Event) {
+			existingUser.VerifiedForEvents = append(existingUser.VerifiedForEvents[:i], existingUser.VerifiedForEvents[i+1:]...)
+			eventExists = true
+			break
+		}
+	}
+	if !eventExists {
+		existingUser.VerifiedForEvents = append(existingUser.VerifiedForEvents, int64(req.Event))
+	}
+	if err := database.DB.Save(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify for event"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated event verification"})
+}
+
+func ToggleFreezingForEvent(c *gin.Context) {
+	var req struct {
+		ID    int `json:"id"`
+		Event int `json:"event"`
+	}
+	fmt.Println(req)
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
+	var existingUser models.User
+	if err := database.DB.Where("id = ?", req.ID).First(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
+		return
+	}
+	eventExists := false
+	for i, event := range existingUser.FrozenForEvents {
+		if event == int64(req.Event) {
+			existingUser.FrozenForEvents = append(existingUser.FrozenForEvents[:i], existingUser.FrozenForEvents[i+1:]...)
+			eventExists = true
+			break
+		}
+	}
+	if !eventExists {
+		existingUser.FrozenForEvents = append(existingUser.FrozenForEvents, int64(req.Event))
+	}
+	if err := database.DB.Save(&existingUser).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify for event"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Successfully updated user event frozen status"})
 }
