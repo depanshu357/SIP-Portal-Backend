@@ -2,15 +2,16 @@ package app
 
 import (
 	"context"
+	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"sip/database"
 	"sip/database/migration"
 	"sip/routes"
 	"sip/utils"
-	"time"
-	"os"
-	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/lpernett/godotenv"
@@ -24,6 +25,11 @@ func Run() {
 	loadEnv()
 	initDb()
 
+	if !isPortAvailable(":8080") {
+		utils.Logger.Fatal("Port 8080 is already in use")
+		return
+	}
+
 	router := routes.InitRoutes()
 
 	server := &http.Server{
@@ -34,7 +40,7 @@ func Run() {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
-	go func(){
+	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			utils.Logger.Sugar().Fatalf("Failed to run server: %v", err)
 		}
@@ -46,6 +52,15 @@ func Run() {
 	shutdownServer(router)
 
 	defer closeDb()
+}
+
+func isPortAvailable(port string) bool {
+	ln, err := net.Listen("tcp", port)
+	if err != nil {
+		return false
+	}
+	_ = ln.Close()
+	return true
 }
 
 func loadEnv() {

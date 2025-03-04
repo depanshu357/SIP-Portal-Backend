@@ -133,6 +133,9 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	if (user.Role == "admin" || user.Role == "superadmin") && !user.HasAdminAccess {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Don't have admin access"})
+	}
 	token, err := generateJWT(user.ID, user.Role)
 	if err != nil {
 		utils.Logger.Sugar().Errorf("Failed to generate JWT: %v", err)

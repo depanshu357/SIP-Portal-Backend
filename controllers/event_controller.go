@@ -41,6 +41,15 @@ func GetAllEvents(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"events": events})
 }
 
+func GetPublicEvents(c *gin.Context) {
+	var events []models.Event
+	if err := database.DB.Where("is_active = ?", true).Find(&events).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching events"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"events": events})
+}
+
 func ToggleEventActivation(c *gin.Context) {
 	var req struct {
 		ID       uint `json:"id" binding:"required"`

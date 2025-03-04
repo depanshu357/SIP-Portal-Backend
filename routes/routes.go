@@ -25,6 +25,8 @@ func InitRoutes() *gin.Engine {
 		})
 	})
 	router.GET("/proforma", middleware.RequireAuth, controllers.GetProforma)
+	router.GET("/events", controllers.GetAllEvents)
+	router.GET("/public-events", controllers.GetPublicEvents)
 	SetAuthRoutes(router)
 	setAdminRoutes(router)
 	SetStudentRoutes(router)

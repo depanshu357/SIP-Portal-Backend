@@ -2,9 +2,12 @@ package services
 
 import (
 	"crypto/rand"
+	"encoding/base64"
+	"fmt"
 	"math/big"
 	"net/smtp"
 	"os"
+	"strings"
 )
 
 func GenerateOTP(otp_size int) (string, error) {
@@ -23,45 +26,29 @@ func SendMail(email string, otp string) error {
 	auth := smtp.PlainAuth("", os.Getenv("EMAIL"), os.Getenv("EMAIL_PASSWORD"), os.Getenv("SMTP_HOST"))
 
 	from := os.Getenv("EMAIL")
-	subject := "Subject: OTP for Verification\n"
+	subject := "Subject: [E-Cell][SIP] noreply:OTP for Verification\n"
 	toHeader := "To: " + email + "\n"
 	fromHeader := "From: " + from + "\n"
 	mimeHeader := "MIME-Version: 1.0\r\nContent-Type: text/html; charset=\"UTF-8\"\r\n\r\n"
-	htmlMessage := `
-<html>
-  <head>
-    <style>
-      body { font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 0; }
-      .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; padding: 20px; border: 1px solid #ddd; }
-      .header { text-align: center; padding: 10px 0; background-color: #4CAF50; color: #ffffff; }
-      .content { padding: 20px; font-size: 16px; color: #333333; }
-      .otp { font-size: 28px; font-weight: bold; color: #4CAF50; text-align: center; margin: 20px 0; }
-      .footer { text-align: center; font-size: 12px; color: #777777; margin-top: 20px; }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>SIP Portal</h1>
-      </div>
-      <div class="content">
-        <p>Hello,</p>
-        <p>Your One Time Password (OTP) is:</p>
-        <p class="otp">` + otp + `</p>
-        <p>This OTP will expire in 10 minutes. Please use it promptly.</p>
-        <p>If you did not request this, please ignore this email.</p>
-      </div>
-      <div class="footer">
-        &copy; 2025 SIP Portal. All rights reserved.
-      </div>
-    </div>
-  </body>
-</html>
-`
+	imagePath := "images/E-Cell_logo.png"
+	imageBytes, err := os.ReadFile(imagePath)
+	if err != nil {
+		fmt.Println("Error reading image file:", err)
+		return err
+	}
+	imageBase64 := base64.StdEncoding.EncodeToString(imageBytes)
+	htmlMessageBytes, err := os.ReadFile("mail.html")
+	if err != nil {
+		return err
+	}
+	htmlMessage := string(htmlMessageBytes)
+	fmt.Println(imageBase64)
+	htmlMessage = strings.Replace(htmlMessage, "{{OTP}}", otp, -1)
+	htmlMessage = strings.Replace(htmlMessage, "{{IMAGE}}", imageBase64, -1)
 	body := fromHeader + toHeader + subject + mimeHeader + htmlMessage
-
+	fmt.Println(htmlMessage)
 	// Send the email.
-	err := smtp.SendMail(
+	err = smtp.SendMail(
 		os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"),
 		auth,
 		from,
