@@ -14,6 +14,7 @@ func setAdminRoutes(router *gin.Engine) {
 		admin.GET("/student-list", controllers.GetStudentList)
 		admin.GET("/student-list-for-event", controllers.GetStudentListForEvent)
 		admin.GET("/recruiter-list", controllers.GetRecruiterList)
+		admin.GET("/recruiter-list-for-event", controllers.GetRecruiterListForEvent)
 		admin.POST("/create-notice", controllers.CreateNotice)
 		admin.DELETE("/delete-notice", middleware.RequireAuth, middleware.AdminAuth, controllers.DeleteNotice)
 		admin.GET("/notices", controllers.GetAllNotice)

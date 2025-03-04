@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sip/database"
@@ -74,12 +75,12 @@ func GetStudentList(c *gin.Context) {
 
 func GetStudentListForEvent(c *gin.Context) {
 	type StudentInfo struct {
-		ID                int            `gorm:"column:id"`
-		RollNumber        string         `gorm:"column:roll_number"`
-		Email             string         `gorm:"column:email"`
-		VerifiedForEvents pq.Int64Array  `gorm:"type:integer[];default:'{}'"`
-		FrozenForEvents   pq.Int64Array  `gorm:"type:integer[];default:'{}'"`
-		ReasonForFreeze   pq.StringArray `gorm:"type:text[];default:'{}'"`
+		ID                int             `gorm:"column:id"`
+		RollNumber        string          `gorm:"column:roll_number"`
+		Email             string          `gorm:"column:email"`
+		VerifiedForEvents pq.Int64Array   `gorm:"type:integer[];default:'{}'"`
+		FrozenForEvents   pq.Int64Array   `gorm:"type:integer[];default:'{}'"`
+		ReasonForFreeze   json.RawMessage `gorm:"type:jsonb;default:'{}'::jsonb"`
 	}
 	var students []StudentInfo
 	if err := database.DB.Table("students").
@@ -102,6 +103,27 @@ func GetRecruiterList(c *gin.Context) {
 	var recruiters []RecruiterInfo
 	if err := database.DB.Table("recruiters").
 		Joins("JOIN users ON users.id = recruiters.user_id").Select("users.id as id", "company", "recruiters.email as email", "is_profile_verified").
+		Find(&recruiters).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"users": recruiters})
+}
+
+func GetRecruiterListForEvent(c *gin.Context) {
+	type RecruiterInfo struct {
+		ID                int             `gorm:"column:id"`
+		Company           string          `gorm:"column:company"`
+		Email             string          `gorm:"column:email"`
+		ContactNumber     string          `gorm:"column:contact_number"`
+		VerifiedForEvents pq.Int64Array   `gorm:"type:integer[];default:'{}'"`
+		FrozenForEvents   pq.Int64Array   `gorm:"type:integer[];default:'{}'"`
+		ReasonForFreeze   json.RawMessage `gorm:"type:jsonb;default:'{}'::jsonb"`
+	}
+	var recruiters []RecruiterInfo
+	if err := database.DB.Table("recruiters").
+		Joins("JOIN users ON users.id = recruiters.user_id").Select("users.id as id", "company", "recruiters.email as email", "verified_for_events", "frozen_for_events", "reason_for_freeze").
+		Where("is_profile_verified = ?", true).
 		Find(&recruiters).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching users"})
 		return
@@ -212,8 +234,9 @@ func ToggleVerificationForEvent(c *gin.Context) {
 
 func ToggleFreezingForEvent(c *gin.Context) {
 	var req struct {
-		ID    int `json:"id"`
-		Event int `json:"event"`
+		ID              int             `json:"id"`
+		Event           int             `json:"event"`
+		ReasonForFreeze json.RawMessage `json:"reasonForFreeze"`
 	}
 	fmt.Println(req)
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -236,6 +259,7 @@ func ToggleFreezingForEvent(c *gin.Context) {
 	if !eventExists {
 		existingUser.FrozenForEvents = append(existingUser.FrozenForEvents, int64(req.Event))
 	}
+	existingUser.ReasonForFreeze = req.ReasonForFreeze
 	if err := database.DB.Save(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to verify for event"})
 		return
