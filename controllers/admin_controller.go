@@ -155,9 +155,16 @@ func GetAllJobDescriptions(c *gin.Context) {
 }
 
 func ChangeAdminAccess(c *gin.Context) {
-	user_id, exists := c.Get("user_id")
+	// user_id, exists := c.Get("user_id")
+	var req struct {
+		ID int `json:"id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+		return
+	}
 	role, role_exists := c.Get("role")
-	if !exists || !role_exists {
+	if !role_exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
@@ -166,7 +173,7 @@ func ChangeAdminAccess(c *gin.Context) {
 		return
 	}
 	var existingUser models.User
-	if err := database.DB.Where("id = ?", user_id).First(&existingUser).Error; err != nil {
+	if err := database.DB.Where("id = ?", req.ID).First(&existingUser).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "User not found"})
 		return
 	}

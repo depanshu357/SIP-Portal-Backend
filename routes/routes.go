@@ -12,8 +12,8 @@ import (
 func InitRoutes() *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://172.31.9.101"}, // Allow specific origins
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},      // Allow the necessary methods
+		AllowOrigins:     []string{"http://localhost:3000", "http://172.20.160.49", "http://sipp.iitk.ac.in"}, // Allow specific origins
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},                                 // Allow the necessary methods
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,           // Allow credentials like cookies, etc.
