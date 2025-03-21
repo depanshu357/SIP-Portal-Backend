@@ -145,7 +145,7 @@ func Login(c *gin.Context) {
 
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetSameSite(http.SameSiteNoneMode)
-	c.SetCookie("Authorization", token, 3600*24, "/", "localhost:3000", true, true)
+	c.SetCookie("Authorization", token, 3600*24, "/", "sipp.iitk.ac.in", true, true)
 
 	utils.Logger.Sugar().Infof("User logged in: %s", user.Email)
 	// println(token)
