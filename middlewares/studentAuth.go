@@ -23,7 +23,6 @@ func StudentAuth(c *gin.Context) {
 			return
 		}
 	} else {
-		utils.Logger.Sugar().Error("Failed to cast user to models.User")
 		c.AbortWithStatusJSON(403, gin.H{"error": "Forbidden"})
 		return
 	}

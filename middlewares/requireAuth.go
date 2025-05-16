@@ -22,11 +22,9 @@ type CustomClaims struct {
 
 func RequireAuth(c *gin.Context) {
 	tokenString, err := c.Cookie("Authorization")
-	utils.Logger.Sugar().Info(c.Request.Header)
 	if err != nil {
 		c.AbortWithStatus(http.StatusUnauthorized)
 	}
-	utils.Logger.Sugar().Info(tokenString)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
