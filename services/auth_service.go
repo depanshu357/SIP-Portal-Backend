@@ -26,7 +26,7 @@ func SendMail(email string, otp string) error {
 	auth := smtp.PlainAuth("", os.Getenv("EMAIL"), os.Getenv("EMAIL_PASSWORD"), os.Getenv("SMTP_HOST"))
 
 	from := os.Getenv("EMAIL")
-	subject := "Subject: [E-Cell][SIP] noreply:OTP for Verification\n"
+	subject := "Subject: [E-Cell] [SIP] noreply:OTP for Verification\n"
 	toHeader := "To: " + email + "\n"
 	fromHeader := "From: " + from + "\n"
 	mimeHeader := "MIME-Version: 1.0\r\nContent-Type: text/html; charset=\"UTF-8\"\r\n\r\n"
