@@ -23,6 +23,7 @@ func Signup(c *gin.Context) {
 		Role        string `json:"role" binding:"required"`
 		RollNo      string `json:"rollNo"`
 		CompanyName string `json:"companyName"`
+		Name        string `json:"name"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		utils.Logger.Sugar().Errorf("Signup validation failed: %v", err)
@@ -81,6 +82,7 @@ func Signup(c *gin.Context) {
 		admin := models.Admin{
 			User:  user,
 			Email: req.Email,
+			Name:  req.Name,
 		}
 		if err := database.DB.Create(&admin).Error; err != nil {
 			utils.Logger.Sugar().Errorf("Failed to create admin: %v", err)
@@ -135,6 +137,7 @@ func Login(c *gin.Context) {
 
 	if (user.Role == "admin" || user.Role == "superadmin") && !user.HasAdminAccess {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Don't have admin access"})
+		return
 	}
 	token, err := generateJWT(user.ID, user.Role)
 	if err != nil {
