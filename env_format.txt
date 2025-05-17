@@ -1,5 +1,5 @@
 DB='postgres://postgres:asdfasdf@localhost:5432/sip?sslmode=disable'
 EMAIL='email_id'
 EMAIL_PASSWORD='password'
-SMTP_HOST='service_host' e.g mmtp.iitk.ac.in
+SMTP_HOST='service_host' e.g mmtp.iitk.ac.in for iitk email
 SMTP_PORT='service port' e.g 25

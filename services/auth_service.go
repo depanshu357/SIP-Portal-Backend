@@ -42,11 +42,11 @@ func SendMail(email string, otp string) error {
 		return err
 	}
 	htmlMessage := string(htmlMessageBytes)
-	fmt.Println(imageBase64)
+	// fmt.Println(imageBase64)
 	htmlMessage = strings.Replace(htmlMessage, "{{OTP}}", otp, -1)
 	htmlMessage = strings.Replace(htmlMessage, "{{IMAGE}}", imageBase64, -1)
 	body := fromHeader + toHeader + subject + mimeHeader + htmlMessage
-	fmt.Println(htmlMessage)
+	// fmt.Println(htmlMessage)
 	// Send the email.
 	err = smtp.SendMail(
 		os.Getenv("SMTP_HOST")+":"+os.Getenv("SMTP_PORT"),

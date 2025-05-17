@@ -188,13 +188,6 @@ func GenerateAndSendOTP(c *gin.Context) {
 	// Delete expired OTPs
 	database.DB.Where("deletion_time < ?", time.Now()).Delete(&models.Otp{})
 
-	// Check if the email already exists in the database
-	var existingUser models.User
-	if err := database.DB.Where("email = ?", body.Email).First(&existingUser).Error; err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "User with this email ID already exists"})
-		return
-	}
-
 	// Check if an OTP has already been sent for this email and is still valid
 	var existingOtp models.Otp
 	result := database.DB.Where("email = ? AND deletion_time > ?", body.Email, time.Now()).First(&existingOtp)
